@@ -6,6 +6,7 @@ function Matrix(a, b, c, d) {
 }
 
 Matrix.fromRotation = function(angle) {
+	angle = angle * Math.PI / 180
 	var sinA = Math.sin(angle);
 	var cosA = Math.cos(angle);
 	return new Matrix(cosA, sinA, -sinA, cosA);

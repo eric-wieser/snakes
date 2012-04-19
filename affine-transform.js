@@ -45,13 +45,13 @@ AffineTransform.prototype = {
 			factor = factor.toDiagonalMatrix();
 		scaled.matrix = this.matrix.times(factor);
 		if(center) {
-			scaled.translation = this.translation.minus(center).times(factor).minus(center);
+			scaled.translation = this.translation.minus(center).times(factor).plus(center);
 		}
 		return scaled;
 	},
 	toSVGTransformString: function() {
 		var m = this.matrix, v = this.translation;
-		return 'M'+m.a + ' ' + m.c + ' ' + m.b + ' ' + m.d + ' ' + v.x + ' ' + v.y
+		return 'M'+[m.a, m.c, m.b, m.d, v.x, v.y];//[m.a, m.b, v.x, m.c, m.d, v.y]
 	},
 };
 
