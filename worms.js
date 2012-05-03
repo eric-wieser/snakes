@@ -24,8 +24,7 @@ var randomInt = function(min, max) {
 
 
 var width = 0, height = 0;
-requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||  
-window.webkitRequestAnimationFrame || window.msRequestAnimationFrame  || window.oRequestAnimationFrame || function( callback ){
+window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame  || window.oRequestAnimationFrame || function(callback) {
 	window.setTimeout(function() {callback(Date.now())}, 1000 / 60.0);
 };
 
