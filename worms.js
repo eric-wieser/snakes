@@ -2,6 +2,25 @@
 
 Array.prototype.contains = function(x) { return this.indexOf(x) != -1; }
 
+Array.prototype.forEveryPair = function(callback, thisPtr) {
+	var l = this.length;
+	for(var i = 0; i < l; i++) {
+		for(var j = i + 1; j < l; j++) {
+			var ti = this[i], tj = this[j];
+			if(ti !== undefined && tj !== undefined)
+				callback.call(thisPtr, ti, tj, i, j, this);
+		}
+	}
+}
+Array.prototype.forAdjacentPairs = function(callback, thisPtr) {
+	var l = this.length;
+	for (var i = 0, j = 1; j < l; i = j++) {
+		var ti = this[i], tj = this[j];
+		if(ti !== undefined && tj !== undefined)
+			callback.call(thisPtr, ti, tj, i, j, this);
+	}
+}
+
 var alertFallback = true; 
 if (typeof console === "undefined" || typeof console.log === "undefined") { 
 	console = {}; 
@@ -9,7 +28,7 @@ if (typeof console === "undefined" || typeof console.log === "undefined") {
 		console.log = function(msg) { 
 			alert(msg); 
 		}; 
-	} else { 
+	} else {
 		console.log = function() {}; 
 	} 
 } 
@@ -36,12 +55,17 @@ $(window).resize(function(){
 }).resize();
 
 var ctx = canvas.getContext('2d');
-var keycodes = {
-	up:    [87, 38],
-	down:  [83, 40],
-	left:  [65, 37],
-	right: [68, 39]
-}
+var keycodes = [{
+	up:    87,
+	down:  83,
+	left:  65,
+	right: 68
+}, {
+	up:    38,
+	down:  40,
+	left:  37,
+	right: 39
+}]
 
 
 function Ball(pos, radius, color, pole) {
@@ -50,7 +74,6 @@ function Ball(pos, radius, color, pole) {
 	this.forces = {};
 	this.radius = radius;
 	this.color = color || 'red';
-	this.mass = Math.PI*radius*radius;
 	this.id = "b" + (Ball.n++);
 
 	this.pole = pole;
@@ -61,7 +84,10 @@ Ball.prototype.getAcceleration = function() {
 	for(var i in this.forces) {
 		sum.plusEquals(this.forces[i]);
 	}
-	return sum.overEquals(this.mass);
+	return sum.overEquals(this.getMass());
+};
+Ball.prototype.getMass = function() {
+	return Math.PI*this.radius*this.radius;
 };
 
 Ball.prototype.update = function(dt) {
@@ -110,7 +136,7 @@ Ball.prototype.updateForceFrom = function(that) {
 	var vdiff = this.velocity.minus(that.velocity);
 	var overlap = this.radius + that.radius - dist;
 	if(overlap > 0 && dist != 0) {
-		var meanmass = 1 / ((1 / this.mass) + (1 / that.mass))
+		var meanmass = 1 / ((1 / this.getMass()) + (1 / that.getMass()))
 		overlap *= meanmass;
 		this.forces["contact."+that.id] = diff.times(overlap*100);
 		that.forces["contact."+this.id] = diff.times(-overlap*100);
@@ -129,19 +155,24 @@ Ball.prototype.draw = function() {
 
 Ball.prototype.follow = function(that) {
 	delete this.forces["following." + that.id] 
-	var target = that.position.plus(this.position.minus(that.position).unit().times(this.radius + that.radius));
-	this.position = target
+	delete that.forces["following." + this.id] 
+	this.position.minusEquals(that.position)
+		.normalize()
+		.timesEquals(this.radius + that.radius)
+		.plusEquals(that.position);
 
-	//this.forces["following." + that.id] = target.minus(this.position).times(20000);
+	//this.forces["following." + that.id] = target.minus(this.position).times(200000);
+	//that.forces["following." + this.id] = target.minus(this.position).times(-200000);
 };
 var worms = [];
 var Worm = function(length, color, pos) {
+	var size = 10;
 	this.balls = [];
-	this.balls[0] = this.head = new Ball(pos, 20, color.randomNear(16))
+	this.balls[0] = this.head = new Ball(pos, size, color.randomNear(16))
 	for (var i = 1; i < length; i++) {
 		tryplaceballs: for(var j = 0; j < 100; j++) {
 			var newPos = pos.plus(Vector.fromPolarCoords(40, Math.random() * Math.PI * 2))
-			var b = new Ball(newPos, 20, color.randomNear(16));
+			var b = new Ball(newPos, size, color.randomNear(16));
 			for(var k = 0; k < this.balls.length; k++) {
 				if(this.balls[k].touches(b))
 					continue tryplaceballs;
@@ -157,29 +188,51 @@ Worm.prototype.draw = function() {
 	for (var i = 0; i < this.balls.length; i++) {
 		this.balls[i].draw();
 	};
+	ctx.save();
+	ctx.fillStyle = "white";
+	ctx.beginPath();
+	ctx.arc(this.head.position.x, this.head.position.y, 5, 0, Math.PI * 2, false);
+	ctx.fill();
+	ctx.restore();
 };
+Worm.prototype.eat = function(ball) {
+	if(this.balls.contains(ball)) return;
+	if(this.balls.length > 15) {
+		this.balls.splice(10);
+		this.balls.forEach(function(b) {
+			b.radius+=5;
+		});
+	}
+	ball.radius = this.head.radius;
+	ball.forces = {};
+	this.balls.push(ball);
+}
 var balls = [];
 Worm.prototype.update = function(dt) {
 	this.balls[0].update(dt);
 	this.balls[0].bounceOffWalls();
 	this.balls[0].updateForceFrom(this.balls);
-	for (var i = 0, j = 1; j < this.balls.length; i = j++) {
-		for(var k = 1; k < this.balls.length; k++) {
-			this.balls[j].updateForceFrom(this.balls[k]);
-		}
-		this.balls[j].update(dt);
-		this.balls[j].follow(this.balls[i]);
-		this.balls[j].bounceOffWalls();
-	};
 
-	for(var i = 0; i < balls.length; i++) {
-		if(balls[i].touches(this.head)) {
-			var b = balls.splice(i, 1)[0];
-			this.balls.push(b);
-			b.color = this.head.color;
-			b.forces = {};
+	this.balls.forAdjacentPairs(function(bi, bj, i, j) {
+		for(var k = 1; k < this.balls.length; k++) {
+			bj.updateForceFrom(this.balls[k]);
 		}
-	}
+		bj.color = bj.color.lerp(this.head.color, 0.01);
+		bj.update(dt);
+		bj.follow(bi);
+		bj.bounceOffWalls();
+	}, this);
+
+	balls.forEach(function(ball, i) {
+		if(ball.touches(this.head)) {
+			var b = balls.splice(i, 1)[0];
+			this.eat(b);
+		} else {
+			this.balls.forEach(function(b) {
+				b.updateForceFrom(ball);
+			});
+		}
+	}, this);
 
 	worms.forEach(function(w) {
 		this.balls.forEach(function(segment1) {
@@ -208,7 +261,6 @@ for(var i = 0; i <= 50; i++) {
 			Color.random(0, 0, 256, 64), "S"
 		);
 	}
-	balls[i].forces.gravity = new Vector(0, 2000000);
 }
 
 worms[0] = new Worm(10, new Color(255, 255, 0), new Vector(100, 100));
@@ -221,9 +273,8 @@ function draw(t) {
 	var dt = (t - lastt) / 1000.0;
 	//ctx.clearRect(0, 0, canvas.width, canvas.height)
 	
-	for(var i = 0; i <= balls.length - 1; i++) {
-		var b1 = balls[i];
-		if(true || b1 != ball) {
+	balls.forEach(function(b1, i) {
+		if(b1 != ball) {
 			for(var j = i+1; j <= balls.length - 1; j++) {
 				var b2 = balls[j];
 				b1.updateForceFrom(b2, dt);
@@ -231,19 +282,19 @@ function draw(t) {
 		}
 		b1.update(dt);
 		b1.bounceOffWalls();
-	}
+	});
+	worms[0].update(dt);
+	worms[1].update(dt);
 
 	ctx.globalCompositeOperation = "source-over";
 	//ctx.clearRect(0, 0, width, height);
 	ctx.fillStyle = "black";
 	ctx.fillRect(0, 0, width, height);
 	ctx.globalCompositeOperation = "lighter";
-	for (var i = 0; i < balls.length; i++) {
-		balls[i].draw();
-	};
-	worms[0].update(dt);
+	balls.forEach(function(ball) {
+		ball.draw();
+	});
 	worms[0].draw();
-	worms[1].update(dt);
 	worms[1].draw();
 	lastt = t;
 	requestAnimationFrame(draw);
@@ -252,15 +303,19 @@ requestAnimationFrame(draw);
 worms[0].head.forces.player = Vector.zero();
 worms[1].head.forces.player = Vector.zero();
 $(window).keydown(function(e) {
-	var a = 200* worms[0].head.mass;
-	if(keycodes.up   .contains(e.which)) worms[keycodes.up   .indexOf(e.which)].head.forces.player.y = -a;
-	if(keycodes.down .contains(e.which)) worms[keycodes.down .indexOf(e.which)].head.forces.player.y = a;
-	if(keycodes.left .contains(e.which)) worms[keycodes.left .indexOf(e.which)].head.forces.player.x = -a;
-	if(keycodes.right.contains(e.which)) worms[keycodes.right.indexOf(e.which)].head.forces.player.x = a;
+	keycodes.forEach(function(k, i) {
+		var a = 200* worms[i].head.getMass();
+		if(k.up    == e.which) worms[i].head.forces.player.y = -a;
+		if(k.down  == e.which) worms[i].head.forces.player.y = a;
+		if(k.left  == e.which) worms[i].head.forces.player.x = -a;
+		if(k.right == e.which) worms[i].head.forces.player.x = a;
+	});
 })
 $(window).keyup(function(e) {
-	if(keycodes.up   .contains(e.which)) worms[keycodes.up   .indexOf(e.which)].head.forces.player.y = 0;
-	if(keycodes.down .contains(e.which)) worms[keycodes.down .indexOf(e.which)].head.forces.player.y = 0;
-	if(keycodes.left .contains(e.which)) worms[keycodes.left .indexOf(e.which)].head.forces.player.x = 0;
-	if(keycodes.right.contains(e.which)) worms[keycodes.right.indexOf(e.which)].head.forces.player.x = 0;
+	keycodes.forEach(function(k, i) {
+		if(k.up    == e.which) worms[i].head.forces.player.y = 0;
+		if(k.down  == e.which) worms[i].head.forces.player.y = 0;
+		if(k.left  == e.which) worms[i].head.forces.player.x = 0;
+		if(k.right == e.which) worms[i].head.forces.player.x = 0;
+	});
 })

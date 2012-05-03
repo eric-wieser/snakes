@@ -24,7 +24,7 @@ Color.prototype.inverted = function() {
 	);
 }
 Color.prototype.toString = function() {
-	return 'rgb(' + this.r + ', ' + this.g + ', ' + this.b + ')';
+	return 'rgb(' + Math.round(this.r) + ', ' + Math.round(this.g) + ', ' + Math.round(this.b) + ')';
 };
 Color.random = function(r, g, b, range) {
 	return new Color(r,g,b).randomNear(range);
