@@ -133,13 +133,12 @@ Ball.prototype.updateForceFrom = function(that) {
 	var dist = diff.magnitude();
 	diff.overEquals(dist);
 
-	var vdiff = this.velocity.minus(that.velocity);
 	var overlap = this.radius + that.radius - dist;
 	if(overlap > 0 && dist != 0) {
 		var meanmass = 1 / ((1 / this.getMass()) + (1 / that.getMass()))
 		overlap *= meanmass;
-		this.forces["contact."+that.id] = diff.times(overlap*100);
-		that.forces["contact."+this.id] = diff.times(-overlap*100);
+		this.forces["contact."+that.id] = diff.times(overlap*200);
+		that.forces["contact."+this.id] = diff.times(-overlap*200);
 	}
 }
 
@@ -155,6 +154,7 @@ Ball.prototype.draw = function() {
 
 Ball.prototype.follow = function(that) {
 	delete this.forces["following." + that.id] 
+
 	delete that.forces["following." + this.id] 
 	this.position.minusEquals(that.position)
 		.normalize()
@@ -166,13 +166,13 @@ Ball.prototype.follow = function(that) {
 };
 var worms = [];
 var Worm = function(length, color, pos) {
-	var size = 10;
+	var ballSize = 10;
 	this.balls = [];
-	this.balls[0] = this.head = new Ball(pos, size, color.randomNear(16))
+	this.balls[0] = this.head = new Ball(pos, ballSize, color.randomNear(16))
 	for (var i = 1; i < length; i++) {
 		tryplaceballs: for(var j = 0; j < 100; j++) {
-			var newPos = pos.plus(Vector.fromPolarCoords(40, Math.random() * Math.PI * 2))
-			var b = new Ball(newPos, size, color.randomNear(16));
+			var newPos = pos.plus(Vector.fromPolarCoords(ballSize*2, Math.random() * Math.PI * 2))
+			var b = new Ball(newPos, ballSize, color.randomNear(16));
 			for(var k = 0; k < this.balls.length; k++) {
 				if(this.balls[k].touches(b))
 					continue tryplaceballs;
@@ -215,7 +215,12 @@ Worm.prototype.update = function(dt) {
 
 	this.balls.forAdjacentPairs(function(bi, bj, i, j) {
 		for(var k = 1; k < this.balls.length; k++) {
+<<<<<<< Updated upstream
 			bj.updateForceFrom(this.balls[k]);
+=======
+			if(k > j+1 || k < j - 1)
+				this.balls[j].updateForceFrom(this.balls[k]);
+>>>>>>> Stashed changes
 		}
 		bj.color = bj.color.lerp(this.head.color, 0.01);
 		bj.update(dt);
@@ -226,19 +231,44 @@ Worm.prototype.update = function(dt) {
 	balls.forEach(function(ball, i) {
 		if(ball.touches(this.head)) {
 			var b = balls.splice(i, 1)[0];
+<<<<<<< Updated upstream
 			this.eat(b);
 		} else {
 			this.balls.forEach(function(b) {
 				b.updateForceFrom(ball);
 			});
+=======
+			this.balls.push(b);
+			b.color = b.color.lerp(this.head.color, 0.5);
+			b.forces = {};
+			b.radius = this.head.radius;
+>>>>>>> Stashed changes
 		}
 	}, this);
 
+	if(this.balls.length > 20) {
+		this.balls = this.balls.slice(0, 10);
+		this.balls.forEach(function(ball) {
+			ball.radius *= 1.5;
+		})
+	}
+
 	worms.forEach(function(w) {
+		if(w == this) return;
 		this.balls.forEach(function(segment1) {
-			w.balls.forEach(function(segment2) {
+			w.balls.forEach(function(segment2, index) {
 				segment1.updateForceFrom(segment2);
-				if(this);
+				if(segment1 == this.head && segment2 != w.head && this.head.touches(segment2)) {
+					var removed = w.balls.splice(index);
+					var b = removed.shift()
+					b.color = b.color.lerp(this.head.color, 0.5);
+					b.radius = this.head.radius;
+					this.balls.push(b);
+					removed.forEach(function(b) {
+						balls.push(b);
+						b.forces = {}
+					});
+				};
 			}, this);
 		}, this);
 	}, this);
@@ -280,6 +310,7 @@ function draw(t) {
 				b1.updateForceFrom(b2, dt);
 			}
 		}
+		b1.forces.gravity = new Vector(0, 200).times(b1.mass);
 		b1.update(dt);
 		b1.bounceOffWalls();
 	});
