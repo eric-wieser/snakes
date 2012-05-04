@@ -67,102 +67,6 @@ var keycodes = [{
 	right: 39
 }]
 
-
-function Ball(pos, radius, color, pole) {
-	Entity.call(this, pos)
-	this.radius = radius;
-	this.color = color || 'red';
-	this.id = "b" + (Ball.n++);
-
-	this.pole = pole;
-	this.forces.contact = {};
-}
-Ball.n = 0;
-Ball.prototype = new Entity;
-
-Ball.prototype.getMass = function() {
-	return Math.PI*this.radius*this.radius;
-};
-Ball.prototype.setMass = function(m) {
-	this.radius = Math.sqrt(m / Math.PI);
-	return this;
-};
-Ball.prototype.update = function(dt) {
-	//resistance = k * A * v^2
-	this.forces.resistance = this.velocity.times(0.05*-this.velocity.magnitude()*this.radius*2);
-	
-	Entity.prototype.update.call(this, dt);
-	this.forces.contact = {};
-	this.forces.following = {};
-
-	return this;
-};
-
-Ball.prototype.touches = function(that) {
-	return this.position.minus(that.position).magnitude() <= this.radius + that.radius;
-};
-
-Ball.prototype.bounceOffWalls = function() {
-	if(this.position.x < this.radius) {
-		this.velocity.x = Math.abs(this.velocity.x);
-		this.position.x = this.radius;
-	} else if(this.position.x > width - this.radius) {
-		this.velocity.x = -Math.abs(this.velocity.x);
-		this.position.x = width - this.radius;
-	}
-
-	if(this.position.y < this.radius) {
-		this.velocity.y = Math.abs(this.velocity.y);
-		this.position.y = this.radius;
-	} else if(this.position.y > height - this.radius) {
-		this.velocity.y = -Math.abs(this.velocity.y);
-		this.position.y = height - this.radius;
-	}
-	return this;
-};
-
-Ball.prototype.updateForceFrom = function(that) {
-	if(that instanceof Array) {
-		for (var i = 0; i < that.length; i++) {
-			if(this != that[i]) this.updateForceFrom(that[i]);
-		}
-	} else {
-		var diff = this.position.minus(that.position);
-		var dist = diff.magnitude();
-		diff.overEquals(dist);
-
-		var overlap = this.radius + that.radius - dist;
-		if(overlap > 0 && dist != 0) {
-			var meanmass = 1 / ((1 / this.getMass()) + (1 / that.getMass()))
-			overlap *= meanmass;
-			this.forces.contact[that.id] = diff.times(overlap*200);
-			that.forces.contact[this.id] = diff.times(-overlap*200);
-		}
-	}
-	return this;
-}
-
-Ball.prototype.draw = function() {
-	ctx.save();
-	ctx.fillStyle = this.color.toString();
-	ctx.beginPath();
-	ctx.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2, false);
-
-	ctx.fill();
-	ctx.restore();
-	return this;
-};
-
-Ball.prototype.follow = function(that) {
-	this.position.minusEquals(that.position)
-		.normalize()
-		.timesEquals(this.radius + that.radius)
-		.plusEquals(that.position);
-
-	//this.forces.following[that.id] = target.minus(this.position).times(200000);
-	//that.forces.following[this.id] = target.minus(this.position).times(-200000);
-	return this;
-};
 var worms = [];
 var Worm = function(length, color, pos) {
 	var ballSize = 10;
@@ -184,9 +88,9 @@ var Worm = function(length, color, pos) {
 		pos = newPos;
 	};
 }
-Worm.prototype.draw = function() {
+Worm.prototype.drawTo = function(ctx) {
 	for (var i = 0; i < this.balls.length; i++) {
-		this.balls[i].draw();
+		this.balls[i].drawTo(ctx);
 	};
 	ctx.save();
 	ctx.fillStyle = "white";
@@ -194,6 +98,7 @@ Worm.prototype.draw = function() {
 	ctx.arc(this.head.position.x, this.head.position.y, 5, 0, Math.PI * 2, false);
 	ctx.fill();
 	ctx.restore();
+	return this;
 };
 Worm.prototype.eat = function(ball) {
 	if(this.balls.contains(ball)) return false;
@@ -282,7 +187,7 @@ Worm.prototype.update = function(dt) {
 
 	//Physics on the head
 	this.balls[0].update(dt);
-	this.balls[0].bounceOffWalls();
+	this.balls[0].bounceOffWalls(width, height);
 	this.balls[0].updateForceFrom(this.balls);
 
 	//Iterate down the body
@@ -294,7 +199,7 @@ Worm.prototype.update = function(dt) {
 		bj.color = bj.color.lerp(this.head.color, 0.01);
 		bj.update(dt);
 		bj.follow(bi);
-		bj.bounceOffWalls();
+		bj.bounceOffWalls(width, height);
 	}, this);
 
 	//Interactions with free balls
@@ -380,7 +285,7 @@ function draw(t) {
 		}
 		//b1.forces.gravity = new Vector(0, 200).times(b1.getMass());
 		b1.update(dt);
-		b1.bounceOffWalls();
+		b1.bounceOffWalls(width, height);
 	});
 	worms[0].update(dt);
 	worms[1].update(dt);
@@ -391,10 +296,10 @@ function draw(t) {
 	ctx.fillRect(0, 0, width, height);
 	ctx.globalCompositeOperation = "lighter";
 	balls.forEach(function(ball) {
-		ball.draw();
+		ball.drawTo(ctx);
 	});
-	worms[0].draw();
-	worms[1].draw();
+	worms[0].drawTo(ctx);
+	worms[1].drawTo(ctx);
 	lastt = t;
 	requestAnimationFrame(draw);
 }
