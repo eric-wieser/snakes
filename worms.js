@@ -69,32 +69,30 @@ var keycodes = [{
 
 
 function Ball(pos, radius, color, pole) {
-	this.position = pos;
-	this.velocity = new Vector(0, 0);
-	this.forces = {};
+	Entity.call(this, pos)
 	this.radius = radius;
 	this.color = color || 'red';
 	this.id = "b" + (Ball.n++);
 
 	this.pole = pole;
+	this.forces.contact = {};
 }
 Ball.n = 0;
-Ball.prototype.getAcceleration = function() {
-	var sum = Vector.zero();
-	for(var i in this.forces) {
-		sum.plusEquals(this.forces[i]);
-	}
-	return sum.overEquals(this.getMass());
-};
+Ball.prototype = new Entity;
+
 Ball.prototype.getMass = function() {
 	return Math.PI*this.radius*this.radius;
 };
-
+Ball.prototype.setMass = function(m) {
+	this.radius = Math.sqrt(m / Math.PI);
+	return this;
+};
 Ball.prototype.update = function(dt) {
-	this.velocity.plusEquals(this.getAcceleration().times(dt));
-	this.position.plusEquals(this.velocity.times(dt));
-
-	this.velocity.timesEquals(0.95);
+	//resistance = k * A * v^2
+	this.forces.resistance = this.velocity.times(0.05*-this.velocity.magnitude()*this.radius*2);
+	Entity.prototype.update.call(this, dt);
+	this.forces.contact = {};
+	this.forces.following = {};
 };
 
 Ball.prototype.touches = function(that) {
@@ -117,6 +115,7 @@ Ball.prototype.bounceOffWalls = function() {
 		this.velocity.y = -Math.abs(this.velocity.y);
 		this.position.y = height - this.radius;
 	}
+	return this;
 };
 
 Ball.prototype.updateForceFrom = function(that) {
@@ -124,22 +123,20 @@ Ball.prototype.updateForceFrom = function(that) {
 		for (var i = 0; i < that.length; i++) {
 			if(this != that[i]) this.updateForceFrom(that[i]);
 		}
-		return;
-	}
-	delete this.forces["contact."+that.id]
-	delete that.forces["contact."+this.id]
+	} else {
+		var diff = this.position.minus(that.position);
+		var dist = diff.magnitude();
+		diff.overEquals(dist);
 
-	var diff = this.position.minus(that.position);
-	var dist = diff.magnitude();
-	diff.overEquals(dist);
-
-	var overlap = this.radius + that.radius - dist;
-	if(overlap > 0 && dist != 0) {
-		var meanmass = 1 / ((1 / this.getMass()) + (1 / that.getMass()))
-		overlap *= meanmass;
-		this.forces["contact."+that.id] = diff.times(overlap*200);
-		that.forces["contact."+this.id] = diff.times(-overlap*200);
+		var overlap = this.radius + that.radius - dist;
+		if(overlap > 0 && dist != 0) {
+			var meanmass = 1 / ((1 / this.getMass()) + (1 / that.getMass()))
+			overlap *= meanmass;
+			this.forces.contact[that.id] = diff.times(overlap*200);
+			that.forces.contact[this.id] = diff.times(-overlap*200);
+		}
 	}
+	return this;
 }
 
 Ball.prototype.draw = function() {
@@ -150,25 +147,25 @@ Ball.prototype.draw = function() {
 
 	ctx.fill();
 	ctx.restore();
+	return this;
 };
 
 Ball.prototype.follow = function(that) {
-	delete this.forces["following." + that.id] 
-
-	delete that.forces["following." + this.id] 
 	this.position.minusEquals(that.position)
 		.normalize()
 		.timesEquals(this.radius + that.radius)
 		.plusEquals(that.position);
 
-	//this.forces["following." + that.id] = target.minus(this.position).times(200000);
-	//that.forces["following." + this.id] = target.minus(this.position).times(-200000);
+	//this.forces.following[that.id] = target.minus(this.position).times(200000);
+	//that.forces.following[this.id] = target.minus(this.position).times(-200000);
+	return this;
 };
 var worms = [];
 var Worm = function(length, color, pos) {
 	var ballSize = 10;
 	this.balls = [];
 	this.balls[0] = this.head = new Ball(pos, ballSize, color.randomNear(16))
+	this.maxMass = this.head.getMass();
 	for (var i = 1; i < length; i++) {
 		tryplaceballs: for(var j = 0; j < 100; j++) {
 			var newPos = pos.plus(Vector.fromPolarCoords(ballSize*2, Math.random() * Math.PI * 2))
@@ -196,31 +193,103 @@ Worm.prototype.draw = function() {
 	ctx.restore();
 };
 Worm.prototype.eat = function(ball) {
-	if(this.balls.contains(ball)) return;
-	if(this.balls.length > 15) {
-		this.balls.splice(10);
-		this.balls.forEach(function(b) {
-			b.radius+=5;
-		});
-	}
-	ball.radius = this.head.radius;
+	if(this.balls.contains(ball)) return false;
+	if(this.maxMass * 4 < ball.getMass()) return false;
+
+	this.maxMass *= 1.05;
+	
 	ball.forces = {};
+	ball.forces.contact = {};
 	this.balls.push(ball);
+	return true;
+}
+Worm.prototype.getMass = function(ball) {
+	return this.balls.reduce(function(sum, x) { return sum + x.getMass(); })
 }
 var balls = [];
 Worm.prototype.update = function(dt) {
+
+	//Shortening
+	var rate = 50;
+	this.balls.forAdjacentPairs(function(a, b) {
+		var aMass = a.getMass();
+		var diff = aMass - this.maxMass;
+		if(diff > rate) {
+			a.setMass(aMass - rate);
+			b.setMass(b.getMass() + rate);
+		} else if(diff < -rate) {
+			a.setMass(aMass + rate);
+			b.setMass(b.getMass() - rate);
+		} else {
+			a.setMass(this.maxMass);
+			b.setMass(b.getMass() + diff);
+		}
+	}, this);
+	var last = this.balls[this.balls.length - 1];
+	if(last.getMass() < rate) {
+		this.balls.pop();
+	}
+
+
+	/*
+	var len = this.balls.length
+	if(len > 10) {
+		var lose = 1;
+		var last = this.balls[len-1];
+		last.radius -= lose;
+		if(last.radius <= 0) this.balls.pop();
+
+		this.balls.forEach(function(ball) {
+			if(ball != last)
+				ball.radius += lose / len;
+		})
+	}*/
+	/*var last = this.balls[this.balls.length - 1];
+	var eachTime = 0.1;
+	this.balls.forEach(function(a, i) {
+		var aMass = a.getMass();
+		var neededMass = this.maxMass - aMass;
+		var massLeft = Math.abs(neededMass * eachTime);
+		var massAdded = 0;
+		for(var j = i + 1; j < this.balls.length; j++) {
+			var b = this.balls[i];
+			var m = b.getMass();
+			var toTake = Math.min(massLeft, m, 10);
+			if(neededMass > 0)
+				b.setMass(m - toTake);
+			else
+				b.setMass(m + toTake);
+
+			massLeft -= toTake;
+			massAdded += toTake;
+		}
+		if(neededMass > 0)
+			a.setMass(aMass + massAdded);
+		else
+			a.setMass(aMass - massAdded);
+
+	}, this);
+	var theMass = last.getMass()
+	if(theMass > this.maxMass) {
+		var newTail = new Ball(this.head.position.clone(), 0, last.color);
+		this.balls.push(newTail);
+		last.setMass(theMass - 10)
+		newTail.setMass(10)
+	} else if (last.getMass() < 0) {
+		this.balls.pop();
+	}*/
+
+
+	//Physics on the head
 	this.balls[0].update(dt);
 	this.balls[0].bounceOffWalls();
 	this.balls[0].updateForceFrom(this.balls);
 
+	//Iterate down the body
 	this.balls.forAdjacentPairs(function(bi, bj, i, j) {
 		for(var k = 1; k < this.balls.length; k++) {
-<<<<<<< Updated upstream
-			bj.updateForceFrom(this.balls[k]);
-=======
 			if(k > j+1 || k < j - 1)
 				this.balls[j].updateForceFrom(this.balls[k]);
->>>>>>> Stashed changes
 		}
 		bj.color = bj.color.lerp(this.head.color, 0.01);
 		bj.update(dt);
@@ -228,89 +297,88 @@ Worm.prototype.update = function(dt) {
 		bj.bounceOffWalls();
 	}, this);
 
+	//Interactions with free balls
 	balls.forEach(function(ball, i) {
-		if(ball.touches(this.head)) {
-			var b = balls.splice(i, 1)[0];
-<<<<<<< Updated upstream
-			this.eat(b);
+		if(ball.touches(this.head) && this.eat(ball)) {
+			balls.splice(i, 1)[0];
 		} else {
 			this.balls.forEach(function(b) {
 				b.updateForceFrom(ball);
 			});
-=======
-			this.balls.push(b);
-			b.color = b.color.lerp(this.head.color, 0.5);
-			b.forces = {};
-			b.radius = this.head.radius;
->>>>>>> Stashed changes
 		}
 	}, this);
 
-	if(this.balls.length > 20) {
-		this.balls = this.balls.slice(0, 10);
-		this.balls.forEach(function(ball) {
-			ball.radius *= 1.5;
-		})
-	}
 
-	worms.forEach(function(w) {
-		if(w == this) return;
+	//Worm/worm collisions
+	worms.forEach(function(that) {
+		if(that == this) return;
 		this.balls.forEach(function(segment1) {
-			w.balls.forEach(function(segment2, index) {
+			that.balls.forEach(function(segment2, index) {
 				segment1.updateForceFrom(segment2);
-				if(segment1 == this.head && segment2 != w.head && this.head.touches(segment2)) {
-					var removed = w.balls.splice(index);
-					var b = removed.shift()
-					b.color = b.color.lerp(this.head.color, 0.5);
-					b.radius = this.head.radius;
-					this.balls.push(b);
-					removed.forEach(function(b) {
-						balls.push(b);
-						b.forces = {}
-					});
+				if(segment1 == this.head && segment2 != that.head && this.head.touches(segment2)) {
+					if(this.eat(segment2)) {
+						var removed = that.balls.splice(index);
+						removed.shift();
+						if(removed.length > that.balls.length) {
+							var r = that.balls;
+							that.balls = removed.reverse();
+							that.balls[0].color = that.head.color;
+							that.balls[0].radius = that.head.radius;
+							that.head = that.balls[0];
+							removed = r;
+						}
+						removed.forEach(function(b) {
+							balls.push(b);
+							b.forces = {};
+							b.forces.contact = {};
+						});
+					}
 				};
 			}, this);
 		}, this);
 	}, this);
+
+
 };
 
 for(var i = 0; i <= 50; i++) {
-	var r = Math.random()
-	if(r < 0.33) {
-		balls[i] = new Ball(new Vector(randomInt(width), randomInt(height)), randomInt(10,20),
-			Color.random(256, 0, 0, 64), "N"
-		);
-	}
-	else if(r < 0.66) {
-		balls[i] = new Ball(new Vector(randomInt(width), randomInt(height)), randomInt(10,20),
-			Color.random(0, 256, 0, 64), null
-		);
-	}
-	else {
-		balls[i] = new Ball(new Vector(randomInt(width), randomInt(height)), randomInt(10,20),
-			Color.random(0, 0, 256, 64), "S"
-		);
-	}
+	var r = Math.random();
+	var color, radius
+
+	if(r < 0.33)
+		color = new Color(192, 192, 192), radius = randomInt(5,10);
+	else if(r < 0.66)
+		color = new Color(128, 128, 128), radius = randomInt(10, 20);
+	else
+		color = new Color(64, 64, 64), radius = randomInt(20,40);
+
+	balls[i] = new Ball(new Vector(randomInt(width), randomInt(height)), radius, color);
 }
 
-worms[0] = new Worm(10, new Color(255, 255, 0), new Vector(100, 100));
-worms[1] = new Worm(10, new Color(0, 255, 0), new Vector(500, 500));
+worms[0] = new Worm(10, new Color(255, 128, 0), new Vector(width/3, height / 2));
+worms[1] = new Worm(10, new Color(0, 128, 255), new Vector(2*width/3, height / 2));
 
-var ball = balls[0];
 var lastt = Date.now();
 var lastdrawt = lastt;
+
+var bluescore = $('#blue-score');
+var orangescore = $('#orange-score');
+setInterval(function() {
+	orangescore.text(worms[0].balls.length);
+	bluescore.text(worms[1].balls.length);
+}, 250);
+
 function draw(t) {
 	var dt = (t - lastt) / 1000.0;
+	if(dt > 0.2) dt = 0.2;
 	//ctx.clearRect(0, 0, canvas.width, canvas.height)
 	
 	balls.forEach(function(b1, i) {
-		if(b1 != ball) {
-			for(var j = i+1; j <= balls.length - 1; j++) {
-				var b2 = balls[j];
-				b1.updateForceFrom(b2, dt);
-			}
+		for(var j = i+1; j <= balls.length - 1; j++) {
+			var b2 = balls[j];
+			b1.updateForceFrom(b2, dt);
 		}
-		b1.forces.gravity = new Vector(0, 200).times(b1.mass);
+		//b1.forces.gravity = new Vector(0, 200).times(b1.getMass());
 		b1.update(dt);
 		b1.bounceOffWalls();
 	});
@@ -331,22 +399,25 @@ function draw(t) {
 	requestAnimationFrame(draw);
 }
 requestAnimationFrame(draw);
-worms[0].head.forces.player = Vector.zero();
-worms[1].head.forces.player = Vector.zero();
 $(window).keydown(function(e) {
 	keycodes.forEach(function(k, i) {
-		var a = 200* worms[i].head.getMass();
-		if(k.up    == e.which) worms[i].head.forces.player.y = -a;
-		if(k.down  == e.which) worms[i].head.forces.player.y = a;
-		if(k.left  == e.which) worms[i].head.forces.player.x = -a;
-		if(k.right == e.which) worms[i].head.forces.player.x = a;
+		var h = worms[i].head;
+		if(!("player" in h.forces)) h.forces.player = Vector.zero()
+		var a = 200* h.getMass();
+		if(k.up    == e.which) h.forces.player.y = -a;
+		if(k.down  == e.which) h.forces.player.y = a;
+		if(k.left  == e.which) h.forces.player.x = -a;
+		if(k.right == e.which) h.forces.player.x = a;
 	});
 })
 $(window).keyup(function(e) {
 	keycodes.forEach(function(k, i) {
-		if(k.up    == e.which) worms[i].head.forces.player.y = 0;
-		if(k.down  == e.which) worms[i].head.forces.player.y = 0;
-		if(k.left  == e.which) worms[i].head.forces.player.x = 0;
-		if(k.right == e.which) worms[i].head.forces.player.x = 0;
+		var h = worms[i].head;
+		if(!("player" in h.forces)) h.forces.player = Vector.zero()
+
+		if(k.up    == e.which) h.forces.player.y = 0;
+		if(k.down  == e.which) h.forces.player.y = 0;
+		if(k.left  == e.which) h.forces.player.x = 0;
+		if(k.right == e.which) h.forces.player.x = 0;
 	});
 })
