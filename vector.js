@@ -111,7 +111,7 @@ Vector.prototype = {
 		return '(' + this.x + ',' + this.y + ')';
 	},
 	clone: function() {
-		return new Vector(x, y);
+		return new Vector(this.x, this.y);
 	}
 };
 

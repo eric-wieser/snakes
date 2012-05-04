@@ -90,9 +90,12 @@ Ball.prototype.setMass = function(m) {
 Ball.prototype.update = function(dt) {
 	//resistance = k * A * v^2
 	this.forces.resistance = this.velocity.times(0.05*-this.velocity.magnitude()*this.radius*2);
+	
 	Entity.prototype.update.call(this, dt);
 	this.forces.contact = {};
 	this.forces.following = {};
+
+	return this;
 };
 
 Ball.prototype.touches = function(that) {
@@ -197,7 +200,6 @@ Worm.prototype.eat = function(ball) {
 	if(this.maxMass * 4 < ball.getMass()) return false;
 
 	this.maxMass *= 1.05;
-	
 	ball.forces = {};
 	ball.forces.contact = {};
 	this.balls.push(ball);
@@ -229,8 +231,6 @@ Worm.prototype.update = function(dt) {
 	if(last.getMass() < rate) {
 		this.balls.pop();
 	}
-
-
 	/*
 	var len = this.balls.length
 	if(len > 10) {
