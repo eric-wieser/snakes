@@ -1,0 +1,16 @@
+<html>
+	<head>
+		<script src="/socket.io/socket.io.js"></script>
+		<script>
+			var socket = io.connect('http://42nd.org:8090');
+			socket.on('news', function (data) {
+				console.log(data);
+				socket.emit('my other event', { my: 'data' });
+			});
+		</script>
+		<title>Test</title>
+	</head>
+	<body>
+		Testing123
+	</body>
+</html>
