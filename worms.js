@@ -206,7 +206,7 @@ Worm.prototype.eat = function(ball) {
 	return true;
 }
 Worm.prototype.getMass = function(ball) {
-	return this.balls.reduce(function(sum, x) { return sum + x.getMass(); })
+	return this.balls.reduce(function(sum, x) { return sum + x.getMass(); }, 0);
 }
 var balls = [];
 Worm.prototype.update = function(dt) {
@@ -364,8 +364,8 @@ var lastdrawt = lastt;
 var bluescore = $('#blue-score');
 var orangescore = $('#orange-score');
 setInterval(function() {
-	orangescore.text(worms[0].balls.length);
-	bluescore.text(worms[1].balls.length);
+	orangescore.text(Math.round(worms[0].getMass() / 500));
+	bluescore.text(Math.round(worms[1].getMass() / 500));
 }, 250);
 
 function draw(t) {
