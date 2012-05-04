@@ -67,8 +67,8 @@ var keycodes = [{
 	right: 39
 }]
 
-var worms = [];
-var Worm = function(length, color, pos) {
+var snakes = [];
+var Snake = function(length, color, pos) {
 	var ballSize = 10;
 	this.balls = [];
 	this.balls[0] = this.head = new Ball(pos, ballSize, color.randomNear(16))
@@ -88,7 +88,7 @@ var Worm = function(length, color, pos) {
 		pos = newPos;
 	};
 }
-Worm.prototype.drawTo = function(ctx) {
+Snake.prototype.drawTo = function(ctx) {
 	for (var i = 0; i < this.balls.length; i++) {
 		this.balls[i].drawTo(ctx);
 	};
@@ -100,7 +100,7 @@ Worm.prototype.drawTo = function(ctx) {
 	ctx.restore();
 	return this;
 };
-Worm.prototype.eat = function(ball) {
+Snake.prototype.eat = function(ball) {
 	if(this.balls.contains(ball)) return false;
 	if(this.maxMass * 4 < ball.getMass()) return false;
 
@@ -110,11 +110,11 @@ Worm.prototype.eat = function(ball) {
 	this.balls.push(ball);
 	return true;
 }
-Worm.prototype.getMass = function(ball) {
+Snake.prototype.getMass = function(ball) {
 	return this.balls.reduce(function(sum, x) { return sum + x.getMass(); }, 0);
 }
 var balls = [];
-Worm.prototype.update = function(dt) {
+Snake.prototype.update = function(dt) {
 
 	//Shortening
 	var rate = 50;
@@ -214,8 +214,8 @@ Worm.prototype.update = function(dt) {
 	}, this);
 
 
-	//Worm/worm collisions
-	worms.forEach(function(that) {
+	//Snake/snake collisions
+	snakes.forEach(function(that) {
 		if(that == this) return;
 		this.balls.forEach(function(segment1) {
 			that.balls.forEach(function(segment2, index) {
@@ -260,8 +260,8 @@ for(var i = 0; i <= 50; i++) {
 	balls[i] = new Ball(new Vector(randomInt(width), randomInt(height)), radius, color);
 }
 
-worms[0] = new Worm(10, new Color(255, 128, 0), new Vector(width/3, height / 2));
-worms[1] = new Worm(10, new Color(0, 128, 255), new Vector(2*width/3, height / 2));
+snakes[0] = new Snake(10, new Color(255, 128, 0), new Vector(width/3, height / 2));
+snakes[1] = new Snake(10, new Color(0, 128, 255), new Vector(2*width/3, height / 2));
 
 var lastt = Date.now();
 var lastdrawt = lastt;
@@ -269,8 +269,8 @@ var lastdrawt = lastt;
 var bluescore = $('#blue-score');
 var orangescore = $('#orange-score');
 setInterval(function() {
-	orangescore.text(Math.round(worms[0].getMass() / 500));
-	bluescore.text(Math.round(worms[1].getMass() / 500));
+	orangescore.text(Math.round(snakes[0].getMass() / 500));
+	bluescore.text(Math.round(snakes[1].getMass() / 500));
 }, 250);
 
 function draw(t) {
@@ -287,8 +287,8 @@ function draw(t) {
 		b1.update(dt);
 		b1.bounceOffWalls(width, height);
 	});
-	worms[0].update(dt);
-	worms[1].update(dt);
+	snakes[0].update(dt);
+	snakes[1].update(dt);
 
 	ctx.globalCompositeOperation = "source-over";
 	//ctx.clearRect(0, 0, width, height);
@@ -298,15 +298,15 @@ function draw(t) {
 	balls.forEach(function(ball) {
 		ball.drawTo(ctx);
 	});
-	worms[0].drawTo(ctx);
-	worms[1].drawTo(ctx);
+	snakes[0].drawTo(ctx);
+	snakes[1].drawTo(ctx);
 	lastt = t;
 	requestAnimationFrame(draw);
 }
 requestAnimationFrame(draw);
 $(window).keydown(function(e) {
 	keycodes.forEach(function(k, i) {
-		var h = worms[i].head;
+		var h = snakes[i].head;
 		if(!("player" in h.forces)) h.forces.player = Vector.zero()
 		var a = 200* h.getMass();
 		if(k.up    == e.which) h.forces.player.y = -a;
@@ -317,7 +317,7 @@ $(window).keydown(function(e) {
 })
 $(window).keyup(function(e) {
 	keycodes.forEach(function(k, i) {
-		var h = worms[i].head;
+		var h = snakes[i].head;
 		if(!("player" in h.forces)) h.forces.player = Vector.zero()
 
 		if(k.up    == e.which) h.forces.player.y = 0;
