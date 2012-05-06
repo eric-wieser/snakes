@@ -1,14 +1,14 @@
-Object.prototype.reduce = function(f, start, thisPtr) {
+var reduceObject = function(o, f, start, thisPtr) {
 	current = start || 0;
-	for(k in this) {
-		if(this.hasOwnProperty(k)) {
-			current = f.call(thisPtr, current, this[k], k, this)
+	for(k in o) {
+		if(o.hasOwnProperty(k)) {
+			current = f.call(thisPtr, current, o[k], k, o)
 		}
 	}
 	return current;
 }
 
-var Entity = function(position, velocity) {
+Entity = function(position, velocity) {
 	this.position = position || Vector.zero();
 	this.velocity = velocity || Vector.zero();
 	this.forces = {};
@@ -16,11 +16,13 @@ var Entity = function(position, velocity) {
 
 Entity.prototype.getMass = function() { return 1; }
 Entity.prototype.getAcceleration = function() {
-	return this.forces.reduce(function sumVectors(total, current) {
+	return reduceObject(this.forces, function sumVectors(total, current) {
 		if(current instanceof Vector)
 			return total.plusEquals(current);
-		else if(current instanceof Array || current instanceof Object)
+		else if(current instanceof Array)
 			return current.reduce(sumVectors, total);
+		else if(current instanceof Object)
+			return reduceObject(current, sumVectors, total);
 		else
 			return total;
 	}, Vector.zero()).overEquals(this.getMass());

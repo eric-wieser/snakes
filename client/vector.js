@@ -1,4 +1,4 @@
-function Vector(x, y) {
+Vector = function(x, y) {
 	this.x = x;
 	this.y = y;
 }
@@ -111,7 +111,7 @@ Vector.prototype = {
 		return '(' + this.x + ',' + this.y + ')';
 	},
 	clone: function() {
-		return new Vector(x, y);
+		return new Vector(this.x, this.y);
 	}
 };
 
