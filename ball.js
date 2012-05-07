@@ -2,20 +2,18 @@ Ball = function(pos, radius, color) {
 	Entity.call(this, pos)
 	this.radius = radius;
 	this.color = color || 'red';
-	this.id = "b" + (Ball.n++);
 
 	this.forces.contact = {};
 }
 Ball.n = 0;
 Ball.prototype = new Entity;
 
-Ball.prototype.getMass = function() {
+Ball.prototype.__defineGetter__('mass', function() {
 	return Math.PI*this.radius*this.radius;
-};
-Ball.prototype.setMass = function(m) {
+});
+Ball.prototype.__defineSetter__('mass', function(m) {
 	this.radius = Math.sqrt(m / Math.PI);
-	return this;
-};
+});
 Ball.prototype.update = function(dt) {
 	//resistance = k * A * v^2
 	this.forces.resistance = this.velocity.times(0.05*-this.velocity.magnitude()*this.radius*2);
@@ -62,7 +60,7 @@ Ball.prototype.updateForceFrom = function(that) {
 
 		var overlap = this.radius + that.radius - dist;
 		if(overlap > 0 && dist != 0) {
-			var meanmass = 1 / ((1 / this.getMass()) + (1 / that.getMass()))
+			var meanmass = 1 / ((1 / this.mass) + (1 / that.mass))
 			overlap *= meanmass;
 			this.forces.contact[that.id] = diff.times(overlap*200);
 			that.forces.contact[this.id] = diff.times(-overlap*200);
@@ -92,3 +90,6 @@ Ball.prototype.follow = function(that) {
 	this.position = target
 	return this;
 };
+Ball.prototype.__defineGetter__('id', function() {
+	return 'b' + this._id;
+})

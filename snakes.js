@@ -11,7 +11,7 @@ Array.prototype.forEveryPair = function(callback, thisPtr) {
 				callback.call(thisPtr, ti, tj, i, j, this);
 		}
 	}
-}
+};
 Array.prototype.forAdjacentPairs = function(callback, thisPtr) {
 	var l = this.length;
 	for (var i = 0, j = 1; j < l; i = j++) {
@@ -19,7 +19,12 @@ Array.prototype.forAdjacentPairs = function(callback, thisPtr) {
 		if(ti !== undefined && tj !== undefined)
 			callback.call(thisPtr, ti, tj, i, j, this);
 	}
-}
+};
+Array.prototype.remove = function(from, to) {
+  var rest = this.slice((to || from) + 1 || this.length);
+  this.length = from < 0 ? this.length + from : from;
+  return this.push.apply(this, rest);
+};
 
 var alertFallback = true; 
 if (typeof console === "undefined" || typeof console.log === "undefined") { 
@@ -67,13 +72,32 @@ var keycodes = [{
 	right: 39
 }]
 
+var World = function() {
+	this.entities = []
+}
+World.prototype.update = function(dt) {
+	this.entities.forEveryPair(function(e1, e2) {
+		e1.updateForceFrom(e2)
+	});
+	this.entities.forEach(function(e) {
+		e.update(dt);
+	});
+	return this;
+}
+World.prototype.addEntity = function(e) {
+	this.entities.push(e);
+}
+World.prototype.removeEntity = function(e) {
+
+}
+
 var snakes = [];
 var Snake = function(length, color, pos) {
 	var ballSize = 10;
 	this.color = color;
 	this.balls = [];
 	this.balls[0] = this.head = new Ball(pos, ballSize, color.randomized(16))
-	this.maxMass = this.head.getMass();
+	this.maxMass = this.head.mass;
 	for (var i = 1; i < length; i++) {
 		tryplaceballs: for(var j = 0; j < 100; j++) {
 			var newPos = pos.plus(Vector.fromPolarCoords(ballSize*2, Math.random() * Math.PI * 2))
@@ -103,7 +127,7 @@ Snake.prototype.drawTo = function(ctx) {
 };
 Snake.prototype.eat = function(ball) {
 	if(this.balls.contains(ball)) return false;
-	if(this.maxMass * 4 < ball.getMass()) return false;
+	if(this.maxMass * 4 < ball.mass) return false;
 
 	this.maxMass *= 1.05;
 	ball.forces = {};
@@ -112,7 +136,7 @@ Snake.prototype.eat = function(ball) {
 	return true;
 }
 Snake.prototype.getMass = function(ball) {
-	return this.balls.reduce(function(sum, x) { return sum + x.getMass(); }, 0);
+	return this.balls.reduce(function(sum, x) { return sum + x.mass }, 0);
 }
 var balls = [];
 Snake.prototype.update = function(dt) {
@@ -120,21 +144,21 @@ Snake.prototype.update = function(dt) {
 	//Shortening
 	var rate = 50;
 	this.balls.forAdjacentPairs(function(a, b) {
-		var aMass = a.getMass();
+		var aMass = a.mass;
 		var diff = aMass - this.maxMass;
 		if(diff > rate) {
-			a.setMass(aMass - rate);
-			b.setMass(b.getMass() + rate);
+			a.mass = aMass - rate;
+			b.mass += rate;
 		} else if(diff < -rate) {
-			a.setMass(aMass + rate);
-			b.setMass(b.getMass() - rate);
+			a.mass = aMass + rate;
+			b.mass -= rate;
 		} else {
-			a.setMass(this.maxMass);
-			b.setMass(b.getMass() + diff);
+			a.mass = this.maxMass;
+			b.mass += diff;
 		}
 	}, this);
 	var last = this.balls[this.balls.length - 1];
-	if(last.getMass() < rate) {
+	if(last.mass < rate) {
 		this.balls.pop();
 	}
 	
@@ -261,7 +285,7 @@ $(window).keydown(function(e) {
 	keycodes.forEach(function(k, i) {
 		var h = snakes[i].head;
 		if(!("player" in h.forces)) h.forces.player = Vector.zero()
-		var a = 200* h.getMass();
+		var a = 200* h.mass;
 		if(k.up    == e.which) h.forces.player.y = -a;
 		if(k.down  == e.which) h.forces.player.y = a;
 		if(k.left  == e.which) h.forces.player.x = -a;

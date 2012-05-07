@@ -6,15 +6,18 @@ Object.prototype.reduce = function(f, start, thisPtr) {
 		}
 	}
 	return current;
-}
+};
 
-var Entity = function(position, velocity) {
+Entity = function(position, velocity) {
 	this.position = position || Vector.zero();
 	this.velocity = velocity || Vector.zero();
 	this.forces = {};
-}
+	this._id = Entity.generateIdNo();
+};
+Entity.generateIdNo = (function(id) {
+	return function() {	return id++; }
+})(0);
 
-Entity.prototype.getMass = function() { return 1; }
 Entity.prototype.getAcceleration = function() {
 	return this.forces.reduce(function sumVectors(total, current) {
 		if(current instanceof Vector)
@@ -23,10 +26,14 @@ Entity.prototype.getAcceleration = function() {
 			return current.reduce(sumVectors, total);
 		else
 			return total;
-	}, Vector.zero()).overEquals(this.getMass());
-}
+	}, Vector.zero()).overEquals(this.mass);
+};
 Entity.prototype.update = function(dt) {
 	this.velocity.plusEquals(this.getAcceleration().times(dt))
 	this.position.plusEquals(this.velocity.times(dt))
 	return this;
-}
+};
+Entity.prototype.__defineGetter__('id', function() {
+	return 'e' + this._id;
+});
+Entity.prototype.mass = 1;
