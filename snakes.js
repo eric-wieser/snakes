@@ -70,13 +70,14 @@ var keycodes = [{
 var snakes = [];
 var Snake = function(length, color, pos) {
 	var ballSize = 10;
+	this.color = color;
 	this.balls = [];
-	this.balls[0] = this.head = new Ball(pos, ballSize, color.randomNear(16))
+	this.balls[0] = this.head = new Ball(pos, ballSize, color.randomized(16))
 	this.maxMass = this.head.getMass();
 	for (var i = 1; i < length; i++) {
 		tryplaceballs: for(var j = 0; j < 100; j++) {
 			var newPos = pos.plus(Vector.fromPolarCoords(ballSize*2, Math.random() * Math.PI * 2))
-			var b = new Ball(newPos, ballSize, color.randomNear(16));
+			var b = new Ball(newPos, ballSize, color.randomized(16));
 			for(var k = 0; k < this.balls.length; k++) {
 				if(this.balls[k].touches(b))
 					continue tryplaceballs;
@@ -137,22 +138,19 @@ Snake.prototype.update = function(dt) {
 		this.balls.pop();
 	}
 	
-	//Physics on the head
-	this.balls[0].update(dt);
-	this.balls[0].bounceOffWalls(width, height);
-	this.balls[0].updateForceFrom(this.balls);
-
-	//Iterate down the body - TODO check efficiency and order
-	this.balls.forAdjacentPairs(function(bi, bj, i, j) {
-		//interact with non-adjacent balls in the chain
-		for(var k = 1; k < this.balls.length; k++) {
-			if(k > j+1 || k < j - 1)
-				this.balls[j].updateForceFrom(this.balls[k]);
-		}
-		bj.color = bj.color.lerp(this.head.color, 0.01);
-		bj.update(dt);
-		bj.follow(bi);
-		bj.bounceOffWalls(width, height);
+	//Add bounce forces
+	this.balls.forEveryPair(function(b1, b2) {
+		b1.updateForceFrom(b2);
+	}, this);
+	//Update balls
+	this.balls.forEach(function(b) {
+		b.update(dt);
+		b.bounceOffWalls(width, height);
+		b.color.lerp(this.color, 0.01);
+	}, this);
+	//Force them into a line
+	this.balls.forAdjacentPairs(function(b1, b2) {
+		b2.follow(b1);
 	}, this);
 
 	//Interactions with free balls
@@ -169,7 +167,6 @@ Snake.prototype.update = function(dt) {
 		}
 	}, this);
 
-
 	//Snake/snake collisions
 	snakes.forEach(function(that) {
 		if(that == this) return;
@@ -182,8 +179,6 @@ Snake.prototype.update = function(dt) {
 					if(removed.length > that.balls.length) {
 						var r = that.balls;
 						that.balls = removed.reverse();
-						that.balls[0].color = that.head.color;
-						that.balls[0].radius = that.head.radius;
 						that.head = that.balls[0];
 						removed = r;
 					}
