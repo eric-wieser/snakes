@@ -47,16 +47,16 @@ var randomInt = function(min, max) {
 };
 
 
-var width = 0, height = 0;
 window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame  || window.oRequestAnimationFrame || function(callback) {
 	window.setTimeout(function() {callback(Date.now())}, 1000 / 60.0);
 };
 
 var canvas = $('#canvas').get(0);
 
+var universe = new World();
 $(window).resize(function(){
-	width = canvas.width = $(canvas).width();
-	height = canvas.height = $(canvas).height();
+	universe.width = canvas.width = $(canvas).width();
+	universe.height = canvas.height = $(canvas).height();
 }).resize();
 
 var ctx = canvas.getContext('2d');
@@ -72,24 +72,6 @@ var keycodes = [{
 	right: 39
 }]
 
-var World = function() {
-	this.entities = []
-}
-World.prototype.update = function(dt) {
-	this.entities.forEveryPair(function(e1, e2) {
-		e1.updateForceFrom(e2)
-	});
-	this.entities.forEach(function(e) {
-		e.update(dt);
-	});
-	return this;
-}
-World.prototype.addEntity = function(e) {
-	this.entities.push(e);
-}
-World.prototype.removeEntity = function(e) {
-
-}
 
 var snakes = [];
 var Snake = function(length, color, pos) {
@@ -169,7 +151,7 @@ Snake.prototype.update = function(dt) {
 	//Update balls
 	this.balls.forEach(function(b) {
 		b.update(dt);
-		b.bounceOffWalls(width, height);
+		b.bounceOffWalls(universe.width, universe.height);
 		b.color.lerp(this.color, 0.01);
 	}, this);
 	//Force them into a line
@@ -182,6 +164,7 @@ Snake.prototype.update = function(dt) {
 		//eat ones touching the head
 		if(ball.touches(this.head) && this.eat(ball)) {
 			balls.splice(i, 1)[0];
+			universe.removeEntity(ball);
 		}
 		//bounce off the rest
 		else {
@@ -208,6 +191,7 @@ Snake.prototype.update = function(dt) {
 					}
 					removed.forEach(function(b) {
 						balls.push(b);
+						universe.addEntity(b);
 						b.forces = {};
 						b.forces.contact = {};
 					});
@@ -222,7 +206,6 @@ Snake.prototype.update = function(dt) {
 
 
 };
-
 //Generate the gray balls
 for(var i = 0; i <= 50; i++) {
 	var r = Math.random();
@@ -232,12 +215,13 @@ for(var i = 0; i <= 50; i++) {
 	else if(r < 0.66) color = new Color(128, 128, 128), radius = randomInt(10, 20);
 	else              color = new Color( 64,  64,  64), radius = randomInt(20, 40);
 
-	balls[i] = new Ball(new Vector(randomInt(width), randomInt(height)), radius, color);
+	balls[i] = new Ball(new Vector(randomInt(universe.width), randomInt(universe.height)), radius, color);
+	universe.addEntity(balls[i]);
 }
 
 //Add the two snakes
-snakes[0] = new Snake(10, new Color(255, 128, 0), new Vector(  width/3, height / 2));
-snakes[1] = new Snake(10, new Color(0, 128, 255), new Vector(2*width/3, height / 2));
+snakes[0] = new Snake(10, new Color(255, 128, 0), new Vector(  universe.width/3, universe.height / 2));
+snakes[1] = new Snake(10, new Color(0, 128, 255), new Vector(2*universe.width/3, universe.height / 2));
 
 //Queue animation frames
 var lastt = Date.now();
@@ -248,15 +232,7 @@ function draw(t) {
 	if(dt > 0.2) dt = 0.2;
 
 	//Update physics of all the balls and snakes
-	balls.forEach(function(b1, i) {
-		for(var j = i+1; j <= balls.length - 1; j++) {
-			var b2 = balls[j];
-			b1.updateForceFrom(b2, dt);
-		}
-		//b1.forces.gravity = new Vector(0, 200).times(b1.getMass());
-		b1.update(dt);
-		b1.bounceOffWalls(width, height);
-	});
+	universe.update(dt);
 	snakes[0].update(dt);
 	snakes[1].update(dt);
 
@@ -264,7 +240,7 @@ function draw(t) {
 	//ctx.clearRect(0, 0, width, height);
 	ctx.globalCompositeOperation = "source-over";
 	ctx.fillStyle = "black";
-	ctx.fillRect(0, 0, width, height);
+	ctx.fillRect(0, 0, universe.width, universe.height);
 
 	//draw all the things
 	ctx.globalCompositeOperation = "lighter";
@@ -281,25 +257,30 @@ function draw(t) {
 requestAnimationFrame(draw);
 
 //Handle keypresses
+var controlStyle = "absolute";
 $(window).keydown(function(e) {
 	keycodes.forEach(function(k, i) {
 		var h = snakes[i].head;
 		if(!("player" in h.forces)) h.forces.player = Vector.zero()
-		var a = 200* h.mass;
-		if(k.up    == e.which) h.forces.player.y = -a;
-		if(k.down  == e.which) h.forces.player.y = a;
-		if(k.left  == e.which) h.forces.player.x = -a;
-		if(k.right == e.which) h.forces.player.x = a;
+		var a = 400* h.mass;
+		if(controlStyle == "absolute") {
+			if(k.up    == e.which) h.forces.player.y = -a;
+			if(k.down  == e.which) h.forces.player.y = a;
+			if(k.left  == e.which) h.forces.player.x = -a;
+			if(k.right == e.which) h.forces.player.x = a;
+		}
 	});
 }).keyup(function(e) {
 	keycodes.forEach(function(k, i) {
 		var h = snakes[i].head;
 		if(!("player" in h.forces)) h.forces.player = Vector.zero()
 
-		if(k.up    == e.which) h.forces.player.y = 0;
-		if(k.down  == e.which) h.forces.player.y = 0;
-		if(k.left  == e.which) h.forces.player.x = 0;
-		if(k.right == e.which) h.forces.player.x = 0;
+		if(controlStyle == "absolute") {
+			if(k.up    == e.which) h.forces.player.y = 0;
+			if(k.down  == e.which) h.forces.player.y = 0;
+			if(k.left  == e.which) h.forces.player.x = 0;
+			if(k.right == e.which) h.forces.player.x = 0;
+		}
 	});
 })
 
