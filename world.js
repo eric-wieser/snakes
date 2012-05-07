@@ -10,7 +10,7 @@ World.prototype.update = function(dt) {
 	this.entities.forEach(function(e) {
 		e.update(dt);
 		e.bounceOffWalls(this.width, this.height);
-	});
+	}, this);
 	return this;
 }
 World.prototype.addEntity = function(e) {

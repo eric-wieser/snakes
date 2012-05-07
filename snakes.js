@@ -94,6 +94,9 @@ var Snake = function(length, color, pos) {
 		}
 		pos = newPos;
 	};
+	this.balls.forEach(function(b) {
+		universe.addEntity(b);
+	});
 }
 Snake.prototype.drawTo = function(ctx) {
 	for (var i = 0; i < this.balls.length; i++) {
@@ -142,65 +145,47 @@ Snake.prototype.update = function(dt) {
 	var last = this.balls[this.balls.length - 1];
 	if(last.mass < rate) {
 		this.balls.pop();
+		universe.removeEntity(last);
 	}
 	
-	//Add bounce forces
-	this.balls.forEveryPair(function(b1, b2) {
-		b1.updateForceFrom(b2);
-	}, this);
-	//Update balls
+	//Update ball colors
 	this.balls.forEach(function(b) {
-		b.update(dt);
-		b.bounceOffWalls(universe.width, universe.height);
 		b.color.lerp(this.color, 0.01);
 	}, this);
+
 	//Force them into a line
 	this.balls.forAdjacentPairs(function(b1, b2) {
 		b2.follow(b1);
 	}, this);
 
-	//Interactions with free balls
+	//Eat free balls
 	balls.forEach(function(ball, i) {
-		//eat ones touching the head
 		if(ball.touches(this.head) && this.eat(ball)) {
-			balls.splice(i, 1)[0];
-			universe.removeEntity(ball);
-		}
-		//bounce off the rest
-		else {
-			this.balls.forEach(function(b) {
-				b.updateForceFrom(ball);
-			});
+			balls.splice(i, 1);
 		}
 	}, this);
 
 	//Snake/snake collisions
 	snakes.forEach(function(that) {
 		if(that == this) return;
-		this.balls.forEach(function(segment1) {
-			that.balls.forEach(function(segment2, index) {
-				//Eat and split if the head makes contact
-				if(segment1 == this.head && segment2 != that.head && this.head.touches(segment2) && this.eat(segment2)) {
-					var removed = that.balls.splice(index);
-					removed.shift();
-					if(removed.length > that.balls.length) {
-						var r = that.balls;
-						that.balls = removed.reverse();
-						that.head = that.balls[0];
-						removed = r;
-					}
-					removed.forEach(function(b) {
-						balls.push(b);
-						universe.addEntity(b);
-						b.forces = {};
-						b.forces.contact = {};
-					});
+		that.balls.forEach(function(segment, index) {
+			//Eat and split if the head makes contact
+			if(segment != that.head && this.head.touches(segment) && this.eat(segment)) {
+				var removed = that.balls.splice(index);
+				removed.shift();
+				if(removed.length > that.balls.length) {
+					delete that.head.forces.player;
+					var r = that.balls;
+					that.balls = removed.reverse();
+					that.head = that.balls[0];
+					removed = r;
 				}
-				//Else, update forces
-				else {
-					segment1.updateForceFrom(segment2);
-				}
-			}, this);
+				removed.forEach(function(b) {
+					balls.push(b);
+					b.forces = {};
+					b.forces.contact = {};
+				});
+			}
 		}, this);
 	}, this);
 
