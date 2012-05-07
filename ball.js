@@ -8,12 +8,18 @@ Ball = function(pos, radius, color) {
 Ball.n = 0;
 Ball.prototype = new Entity;
 
-Ball.prototype.__defineGetter__('mass', function() {
-	return Math.PI*this.radius*this.radius;
+Object.defineProperty(Ball.prototype, 'mass', {
+	get: function() {
+		return Math.PI*this.radius*this.radius;
+	},
+	set: function(m) {
+		this.radius = Math.sqrt(m / Math.PI);
+	}
 });
-Ball.prototype.__defineSetter__('mass', function(m) {
-	this.radius = Math.sqrt(m / Math.PI);
+Object.defineProperty(Ball.prototype, 'id', {
+	get: function() { return 'b' + this._id; }
 });
+
 Ball.prototype.update = function(dt) {
 	//resistance = k * A * v^2
 	this.forces.resistance = this.velocity.times(0.05*-this.velocity.magnitude()*this.radius*2);
@@ -90,6 +96,3 @@ Ball.prototype.follow = function(that) {
 	this.position = target
 	return this;
 };
-Ball.prototype.__defineGetter__('id', function() {
-	return 'b' + this._id;
-})
