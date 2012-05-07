@@ -82,12 +82,13 @@ Ball.prototype.drawTo = function(ctx) {
 };
 
 Ball.prototype.follow = function(that) {
-	this.position.minusEquals(that.position)
+	target = this.position.minus(that.position)
 		.normalize()
 		.timesEquals(this.radius + that.radius)
 		.plusEquals(that.position);
 
-	//this.forces.following[that.id] = target.minus(this.position).times(200000);
-	//that.forces.following[this.id] = target.minus(this.position).times(-200000);
+	this.forces.following[that.id] = target.minus(this.position).times(20000);
+	that.forces.following[this.id] = target.minus(this.position).times(-20000);
+	this.position = target
 	return this;
 };
