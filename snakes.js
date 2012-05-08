@@ -98,7 +98,13 @@ var Snake = function(length, color, pos) {
 }
 Object.defineProperty(Snake.prototype, 'tail', {
 	get: function() { return this.balls[this.balls.length - 1]; }
-})
+});
+Object.defineProperty(Snake.prototype, 'mass', {
+	get: function() { return this.balls.reduce(function(sum, x) { return sum + x.mass }, 0); }
+});
+Object.defineProperty(Snake.prototype, 'length', {
+	get: function() { return this.balls.length; }
+});
 Snake.prototype.drawTo = function(ctx) {
 	for (var i = 0; i < this.balls.length; i++) {
 		this.balls[i].drawTo(ctx);
@@ -114,6 +120,7 @@ Snake.prototype.drawTo = function(ctx) {
 Snake.prototype.addBall = function(ball) {
 	ball.forces = {};
 	ball.forces.contact = {};
+	ball.velocity.set(0, 0);
 
 	var pos = this.tail.position
 	var dist = ball.radius + this.tail.radius;
@@ -128,21 +135,18 @@ Snake.prototype.addBall = function(ball) {
 }
 Snake.prototype.eat = function(ball) {
 	if(this.balls.contains(ball)) return false;
-	if(this.maxMass * 4 < ball.mass) return false;
+	if(this.maxMass * 2 < ball.mass) return false;
 
 	this.maxMass *= 1.05;
 	this.addBall(ball);
 	return true;
 }
-Snake.prototype.getMass = function(ball) {
-	return this.balls.reduce(function(sum, x) { return sum + x.mass }, 0);
-}
 var balls = [];
 Snake.prototype.update = function(dt) {
 
 	//Shortening
-	var rate = 50;
-	this.balls.forAdjacentPairs(function(a, b) {
+	this.balls.forAdjacentPairs(function(a, b, ai, bi) {
+		var rate = 50;// + 5*(this.length - ai);
 		var aMass = a.mass;
 		var diff = aMass - this.maxMass;
 		if(diff > rate) {
@@ -156,8 +160,8 @@ Snake.prototype.update = function(dt) {
 			b.mass += diff;
 		}
 	}, this);
-	var last = this.balls[this.balls.length - 1];
-	if(last.mass < rate) {
+	var last = this.tail;
+	if(!(last.mass > 0)) { //NaNs
 		this.balls.pop();
 		universe.removeEntity(last);
 	}
@@ -299,7 +303,7 @@ setInterval(function() {
 	snakes.forEach(function(s, i) {
 		var elem = scores.eq(i);
 		elem
-			.text(Math.round(s.getMass() / 500))
+			.text(Math.round(s.mass / 500))
 			.css('color', s.color.toString());
 	});
 }, 250);

@@ -23,6 +23,9 @@ Vector.prototype = {
 		this.y = y;
 		return this;
 	},
+	isFinite: function() {
+		return isFinite(this.x) && isFinite(this.y);
+	},
 	magnitude: function() {
 		return Math.sqrt(this.dot(this));
 	},

@@ -25,7 +25,7 @@ Object.defineProperty(Entity.prototype, 'acceleration', {
 	get: function() {
 		return this.forces.reduce(function sumVectors(total, current) {
 			if(current instanceof Vector)
-				return total.plusEquals(current);
+				return current.isFinite() ? total.plusEquals(current) : total;
 			else if(current instanceof Array || current instanceof Object) 
 				return current.reduce(sumVectors, total);
 			else
