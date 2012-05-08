@@ -1,8 +1,8 @@
-Object.prototype.reduce = function(f, start, thisPtr) {
+Object.reduce = function(obj, f, start, thisPtr) {
 	current = start || 0;
-	for(k in this) {
-		if(this.hasOwnProperty(k)) {
-			current = f.call(thisPtr, current, this[k], k, this)
+	for(k in obj) {
+		if(obj.hasOwnProperty(k)) {
+			current = f.call(thisPtr, current, obj[k], k, obj)
 		}
 	}
 	return current;
@@ -23,11 +23,13 @@ Object.defineProperty(Entity.prototype, 'id', {
 });
 Object.defineProperty(Entity.prototype, 'acceleration', {
 	get: function() {
-		return this.forces.reduce(function sumVectors(total, current) {
+		return Object.reduce(this.forces, function sumVectors(total, current) {
 			if(current instanceof Vector)
 				return current.isFinite() ? total.plusEquals(current) : total;
-			else if(current instanceof Array || current instanceof Object) 
+			else if(current instanceof Array)
 				return current.reduce(sumVectors, total);
+			else if(current instanceof Object)
+				return Object.reduce(current, sumVectors, total);
 			else
 				return total;
 		}, Vector.zero()).overEquals(this.mass);
