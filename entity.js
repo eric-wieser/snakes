@@ -38,4 +38,7 @@ Entity.prototype.update = function(dt) {
 	this.position.plusEquals(this.velocity.times(dt))
 	return this;
 };
+Entity.prototype.clearForces = function(dt) {
+	this.forces = {}
+}
 Entity.prototype.mass = 1;

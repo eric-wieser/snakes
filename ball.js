@@ -75,6 +75,12 @@ Ball.prototype.updateForceFrom = function(that) {
 	return this;
 }
 
+Ball.prototype.clearForces = function() {
+	Entity.prototype.clearForces.call(this);
+	this.forces.contact = {};
+	this.forces.following = {};
+}
+
 Ball.prototype.drawTo = function(ctx) {
 	ctx.save();
 	ctx.fillStyle = this.color.toString();

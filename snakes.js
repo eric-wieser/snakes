@@ -118,8 +118,7 @@ Snake.prototype.drawTo = function(ctx) {
 	return this;
 };
 Snake.prototype.addBall = function(ball) {
-	ball.forces = {};
-	ball.forces.contact = {};
+	ball.clearForces();
 	ball.velocity.set(0, 0);
 
 	var pos = this.tail.position
@@ -133,9 +132,13 @@ Snake.prototype.addBall = function(ball) {
 
 	this.balls.push(ball);
 }
-Snake.prototype.eat = function(ball) {
+Snake.prototype.canEat = function(ball) {
 	if(this.balls.contains(ball)) return false;
 	if(this.maxMass * 2 < ball.mass) return false;
+	return true;
+}
+Snake.prototype.eat = function(ball) {
+	if(!this.canEat(ball)) return false;
 
 	this.maxMass *= 1.05;
 	this.addBall(ball);
@@ -191,7 +194,10 @@ Snake.prototype.update = function(dt) {
 			if(segment != that.head && this.head.touches(segment) && this.eat(segment)) {
 				var removed = that.balls.splice(index);
 				removed.shift();
-				if(removed.length > that.balls.length) {
+				var removedMass = removed.reduce(function(sum, b) {return sum + b.mass}, 0)
+				var remainingMass = this.mass;
+				//Reverse the snake if too much was taken off
+				if(removedMass > remainingMass) {
 					delete that.head.forces.player;
 					var r = that.balls;
 					that.balls = removed.reverse();
@@ -200,8 +206,7 @@ Snake.prototype.update = function(dt) {
 				}
 				removed.forEach(function(b) {
 					balls.push(b);
-					b.forces = {};
-					b.forces.contact = {};
+					b.clearForces();
 				});
 			}
 		}, this);
