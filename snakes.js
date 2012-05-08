@@ -90,23 +90,15 @@ var Snake = function(length, color, pos) {
 	this.balls[0] = this.head = new Ball(pos, ballSize, color.randomized(16))
 	this.maxMass = this.head.mass;
 	for (var i = 1; i < length; i++) {
-		tryplaceballs: for(var j = 0; j < 100; j++) {
-			var newPos = pos.plus(Vector.fromPolarCoords(ballSize*2, Math.random() * Math.PI * 2))
-			var b = new Ball(newPos, ballSize, color.randomized(16));
-			for(var k = 0; k < this.balls.length; k++) {
-				if(this.balls[k].touches(b))
-					continue tryplaceballs;
-			}
-			pos = newPos;
-			this.balls[i] = b;
-			break;
-		}
-		pos = newPos;
+		this.addBall(new Ball(new Vector(), ballSize, color.randomized(16)));
 	};
 	this.balls.forEach(function(b) {
 		universe.addEntity(b);
 	});
 }
+Object.defineProperty(Snake.prototype, 'tail', {
+	get: function() { return this.balls[this.balls.length - 1]; }
+})
 Snake.prototype.drawTo = function(ctx) {
 	for (var i = 0; i < this.balls.length; i++) {
 		this.balls[i].drawTo(ctx);
@@ -119,14 +111,27 @@ Snake.prototype.drawTo = function(ctx) {
 	ctx.restore();
 	return this;
 };
+Snake.prototype.addBall = function(ball) {
+	ball.forces = {};
+	ball.forces.contact = {};
+
+	var pos = this.tail.position
+	var dist = ball.radius + this.tail.radius;
+	for(var j = 0; j < 100; j++) {
+		var p = Vector.fromPolarCoords(dist, Math.random() * Math.PI * 2)
+		ball.position = p.plusEquals(pos);
+		var collides = this.balls.some(function(b) {b.touches(ball)});
+		if(collides) break;
+	}
+
+	this.balls.push(ball);
+}
 Snake.prototype.eat = function(ball) {
 	if(this.balls.contains(ball)) return false;
 	if(this.maxMass * 4 < ball.mass) return false;
 
 	this.maxMass *= 1.05;
-	ball.forces = {};
-	ball.forces.contact = {};
-	this.balls.push(ball);
+	this.addBall(ball);
 	return true;
 }
 Snake.prototype.getMass = function(ball) {
@@ -220,7 +225,7 @@ snakes[1] = new Snake(10, new Color(0, 128, 255), new Vector(2*universe.width/3,
 snakes[1].controls = keycodes.arrows
 
 if(location.hash == '#big') {
-	snakes[2] = new Snake(10, new Color(0, 255, 0), new Vector(2*universe.width/2, universe.height / 4));
+	snakes[2] = new Snake(10, new Color(0, 255, 0), new Vector(universe.width/2, universe.height / 4));
 	snakes[2].controls = keycodes.numpad
 }
 
@@ -289,9 +294,12 @@ $(window).keydown(function(e) {
 })
 
 //Show the scores
-var bluescore = $('#blue-score');
-var orangescore = $('#orange-score');
+var scores = $('.scores').children();
 setInterval(function() {
-	orangescore.text(Math.round(snakes[0].getMass() / 500));
-	bluescore.text(Math.round(snakes[1].getMass() / 500));
+	snakes.forEach(function(s, i) {
+		var elem = scores.eq(i);
+		elem
+			.text(Math.round(s.getMass() / 500))
+			.css('color', s.color.toString());
+	});
 }, 250);
