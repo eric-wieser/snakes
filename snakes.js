@@ -60,17 +60,26 @@ $(window).resize(function(){
 }).resize();
 
 var ctx = canvas.getContext('2d');
-var keycodes = [{
-	up:    87,
-	down:  83,
-	left:  65,
-	right: 68
-}, {
-	up:    38,
-	down:  40,
-	left:  37,
-	right: 39
-}]
+var keycodes = {
+	wasd: {
+		up:    87,
+		down:  83,
+		left:  65,
+		right: 68
+	},
+	arrows: {
+		up:    38,
+		down:  40,
+		left:  37,
+		right: 39
+	},
+	numpad: {
+		up:    104,
+		down:  101,
+		left:  100,
+		right: 102
+	}
+};
 
 
 var snakes = [];
@@ -206,7 +215,15 @@ for(var i = 0; i <= 50; i++) {
 
 //Add the two snakes
 snakes[0] = new Snake(10, new Color(255, 128, 0), new Vector(  universe.width/3, universe.height / 2));
+snakes[0].controls = keycodes.wasd
 snakes[1] = new Snake(10, new Color(0, 128, 255), new Vector(2*universe.width/3, universe.height / 2));
+snakes[1].controls = keycodes.arrows
+
+if(location.hash == '#big') {
+	snakes[2] = new Snake(10, new Color(0, 255, 0), new Vector(2*universe.width/2, universe.height / 4));
+	snakes[2].controls = keycodes.numpad
+}
+
 
 //Queue animation frames
 var lastt = Date.now();
@@ -218,8 +235,9 @@ function draw(t) {
 
 	//Update physics of all the balls and snakes
 	universe.update(dt);
-	snakes[0].update(dt);
-	snakes[1].update(dt);
+	snakes.forEach(function(snake) {
+		snake.update(dt);
+	});
 
 	//draw the black background
 	//ctx.clearRect(0, 0, width, height);
@@ -232,8 +250,9 @@ function draw(t) {
 	balls.forEach(function(ball) {
 		ball.drawTo(ctx);
 	});
-	snakes[0].drawTo(ctx);
-	snakes[1].drawTo(ctx);
+	snakes.forEach(function(snake) {
+		snake.drawTo(ctx);
+	});
 
 	//prepare for next frame
 	lastt = t;
@@ -244,27 +263,27 @@ requestAnimationFrame(draw);
 //Handle keypresses
 var controlStyle = "absolute";
 $(window).keydown(function(e) {
-	keycodes.forEach(function(k, i) {
-		var h = snakes[i].head;
+	snakes.forEach(function(s) {
+		var h = s.head;
 		if(!("player" in h.forces)) h.forces.player = Vector.zero()
 		var a = 400* h.mass;
 		if(controlStyle == "absolute") {
-			if(k.up    == e.which) h.forces.player.y = -a;
-			if(k.down  == e.which) h.forces.player.y = a;
-			if(k.left  == e.which) h.forces.player.x = -a;
-			if(k.right == e.which) h.forces.player.x = a;
+			if(s.controls.up    == e.which) h.forces.player.y = -a;
+			if(s.controls.down  == e.which) h.forces.player.y = a;
+			if(s.controls.left  == e.which) h.forces.player.x = -a;
+			if(s.controls.right == e.which) h.forces.player.x = a;
 		}
 	});
 }).keyup(function(e) {
-	keycodes.forEach(function(k, i) {
-		var h = snakes[i].head;
+	snakes.forEach(function(s) {
+		var h = s.head;
 		if(!("player" in h.forces)) h.forces.player = Vector.zero()
 
 		if(controlStyle == "absolute") {
-			if(k.up    == e.which) h.forces.player.y = 0;
-			if(k.down  == e.which) h.forces.player.y = 0;
-			if(k.left  == e.which) h.forces.player.x = 0;
-			if(k.right == e.which) h.forces.player.x = 0;
+			if(s.controls.up    == e.which) h.forces.player.y = 0;
+			if(s.controls.down  == e.which) h.forces.player.y = 0;
+			if(s.controls.left  == e.which) h.forces.player.x = 0;
+			if(s.controls.right == e.which) h.forces.player.x = 0;
 		}
 	});
 })
