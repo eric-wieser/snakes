@@ -3,28 +3,37 @@
 	<head>
 		<script src="/socket.io/socket.io.js"></script>
 		<script src="/client/vector.js"></script>
+		<script src="/client/entity.js"></script>
+		<script src="/client/color.js"></script>
+		<script src="/client/ball.js"></script>
 		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
 		<style>
-			html, body, canvas {width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden}
+			html, body {width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden}
 		</style>
 
 		<title>Test</title>
 	</head>
 	<body>
 		Testing123
-		<canvas id="canvas">Wat</canvas>
+		<canvas id="canvas" height="500" width="750" style="margin: auto">Wat</canvas>
 		<script>
+			window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame  || window.oRequestAnimationFrame || function(callback) {
+					window.setTimeout(function() {callback(Date.now())}, 1000 / 60.0);
+				};
+
+
 			//Get canvas stuff
 			var canvas = $('#canvas').get(0);
+			var width = canvas.width, height = canvas.height;
 
-			$(window).resize(function(){
-				width = canvas.width = $(canvas).width();
-				height = canvas.height = $(canvas).height();
-			}).resize();
+			// $(window).resize(function(){
+			// 	width = canvas.width = $(canvas).width();
+			// 	height = canvas.height = $(canvas).height();
+			// }).resize();
 
 			var ctx = canvas.getContext('2d');
-			var position = new Vector(10, 10);
-
+			var ball;
+			var opponents = {};
 
 			var keycodes = {
 				up:    87,
@@ -33,31 +42,133 @@
 				right: 68
 			};
 
-			var theForce = Vector.zero();
-
-			$(window).keydown(function(e) {
-				var a = 100;
-				var changed = false;
-				if(keycodes.up    == e.which) changed = true, theForce.y = -a;
-				if(keycodes.down  == e.which) changed = true, theForce.y = a;
-				if(keycodes.left  == e.which) changed = true, theForce.x = -a;
-				if(keycodes.right == e.which) changed = true, theForce.x = a;
-				if(changed) socket.emit('playercontrol', theForce);
-			}).keyup(function(e) {
-				var changed = false;
-				if(keycodes.up    == e.which) changed = true, theForce.y = 0;
-				if(keycodes.down  == e.which) changed = true, theForce.y = 0;
-				if(keycodes.left  == e.which) changed = true, theForce.x = 0;
-				if(keycodes.right == e.which) changed = true, theForce.x = 0;
-				if(changed) socket.emit('playercontrol', theForce);
-			})
+			
 
 			var socket = io.connect('http://42nd.org:8090');
-			socket.emit('set-name', prompt('name?'));
-			socket.on('update', function (v) {
-				ctx.fillStyle = "red";
-				ctx.fillRect(v.x, v.y, 50, 50);
+			var name;
+			(function joinTheGame() {
+				var n = prompt('name?');
+				socket.emit('join', n, function(data) {
+					if(data) {
+						name = n;
+						ball = new Ball(
+							Vector.fromJSON(data.p),
+							data.r,
+							Color.fromJSON(data.c)
+						);
+						startPlaying();
+					} else {
+						alert("Name taken!")
+						joinTheGame();
+					}
+				});
+			})();
+
+			socket.on('newplayer', function (data) {
+				if(!(data.name in opponents)) {
+					opponents[data.name] = new Ball(
+						Vector.fromJSON(data.p),
+						data.r,
+						Color.fromJSON(data.c)
+					);
+				}
+				console.log(opponents);
 			});
+			socket.on('playerquit', function (data) {
+				delete opponents[data.name];
+			});
+			function startPlaying() {
+				socket.on('update', function (data) {
+					for(player in data) {
+						if(player == name) {
+							ball.position = Vector.fromJSON(data[player].p);
+							ball.velocity = Vector.fromJSON(data[player].v);
+						}
+						else if(player in opponents) {
+							opponents[player].position = Vector.fromJSON(data[player].p);
+							opponents[player].velocity = Vector.fromJSON(data[player].v);
+						}
+					}
+				});
+				ball.forces.player = Vector.zero();
+
+				// $(window).keydown(function(e) {
+				// 	var a = 100 * ball.getMass();
+				// 	var changed = false;
+				// 	if(keycodes.up    == e.which) changed = true, ball.forces.player.y = -a;
+				// 	if(keycodes.down  == e.which) changed = true, ball.forces.player.y = a;
+				// 	if(keycodes.left  == e.which) changed = true, ball.forces.player.x = -a;
+				// 	if(keycodes.right == e.which) changed = true, ball.forces.player.x = a;
+				// 	if(changed) socket.emit('playercontrol', ball.forces.player);
+				// }).keyup(function(e) {
+				// 	var changed = false;
+				// 	if(keycodes.up    == e.which) changed = true, ball.forces.player.y = 0;
+				// 	if(keycodes.down  == e.which) changed = true, ball.forces.player.y = 0;
+				// 	if(keycodes.left  == e.which) changed = true, ball.forces.player.x = 0;
+				// 	if(keycodes.right == e.which) changed = true, ball.forces.player.x = 0;
+				// 	if(changed) socket.emit('playercontrol', ball.forces.player);
+				// })
+				var target = new Vector();
+				$(canvas).mousemove(function(e) {
+					var offset = $(this).offset();
+					var x = e.pageX - offset.left;
+					var y = e.pageY - offset.top;
+					target.set(x, y);
+					socket.emit('playercontrol', target);
+				});
+
+				var lastt = Date.now();
+				function draw(t) {
+					//Calculate frame time
+					var dt = (t - lastt) / 1000.0;
+
+					// for(p in opponents) {
+					// 	opponents[p].update(dt);
+					// 	opponents[p].bounceOffWalls(750, 500);
+					// }
+					ball.update(dt);
+					ball.bounceOffWalls(750, 500);
+					//draw the black background
+					//ctx.clearRect(0, 0, width, height);
+
+					ctx.globalCompositeOperation = "source-over";
+					ctx.fillStyle = "black";
+					ctx.fillRect(0, 0, width, height);
+
+					ball.drawTo(ctx);
+					for(p in opponents) {
+					 	opponents[p].drawTo(ctx);
+					 }
+					/*
+					//Update physics of all the balls and snakes
+					balls.forEach(function(b1, i) {
+						for(var j = i+1; j <= balls.length - 1; j++) {
+							var b2 = balls[j];
+							b1.updateForceFrom(b2, dt);
+						}
+						//b1.forces.gravity = new Vector(0, 200).times(b1.getMass());
+						b1.update(dt);
+						b1.bounceOffWalls(width, height);
+					});
+					snakes[0].update(dt);
+					snakes[1].update(dt);
+
+
+					//draw all the things
+					ctx.globalCompositeOperation = "lighter";
+					balls.forEach(function(ball) {
+						ball.drawTo(ctx);
+					});
+					snakes[0].drawTo(ctx);
+					snakes[1].drawTo(ctx);
+					*/
+
+					//prepare for next frame
+					lastt = t;
+					requestAnimationFrame(draw);
+				}
+				requestAnimationFrame(draw);
+			}
 		</script>
 	</body>
 </html>

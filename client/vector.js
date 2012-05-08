@@ -2,6 +2,9 @@ Vector = function(x, y) {
 	this.x = x;
 	this.y = y;
 }
+Vector.fromJSON = function(data) {
+	return new Vector(data.x, data.y);
+}
 Vector.fromPolarCoords = function(r, theta) {
 	if(theta === undefined)
 		theta = r, r = 1;
