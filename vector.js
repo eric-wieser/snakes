@@ -26,18 +26,26 @@ Vector.prototype = {
 	isFinite: function() {
 		return isFinite(this.x) && isFinite(this.y);
 	},
-	magnitude: function() {
-		return Math.sqrt(this.dot(this));
+	get length() {
+		return Math.sqrt(this.lengthSquared);
+	},
+	set length(x) {
+		this.overEquals(x/this.length);
+	},
+	get lengthSquared() {
+		return this.dot(this);
+	},
+	set lengthSquared(x) {
+		this.overEquals(Math.sqrt(x/this.lengthSquared));
 	},
 	angle: function() {
 		return Math.atan2(this.x, this.y);
 	},
 	normalized: function() {
-		return this.times(1 / this.magnitude());
+		return this.over(this.length);
 	},
 	normalize: function() {
-		var len = this.magnitude();
-		return this.overEquals(len);
+		return this.overEquals(this.length);
 	},
 	plus: function(that) {
 		return new Vector(this.x + that.x, this.y + that.y);
@@ -95,11 +103,14 @@ Vector.prototype = {
 	dot: function(that) {
 		return this.x * that.x + this.y * that.y;
 	},
-	distanceTo: function(that) {
-		return this.minus(that).magnitude();
+	distanceTo: function(that, squared) {
+		var dx = this.x - that.x;
+		var dy = this.y - that.y;
+		var d = dx*dx + dy*dy;
+		return squared ? d : Math.sqrt(d);
 	},
 	angleTo: function(that) {
-		return Math.acos(this.dot(that) / (this.magnitude() * that.magnitude()))
+		return Math.acos(this.dot(that) / Math.sqrt(this.lengthSquared * that.lengthSquared))
 	},
 	lerp: function(that, t) {
 		return that.times(t).plus(this.times(1 - t));
@@ -118,10 +129,12 @@ Vector.prototype = {
 	}
 };
 
-Vector.zero = function() { return new Vector(0, 0) };
-Vector.i = function() { return new Vector(1, 0) };
-Vector.j = function() { return new Vector(0, 1) };
-Vector.NaN = function() { return new Vector(Number.NaN, Number.NaN) };
+Object.defineProperties(Vector, {
+	zero: {get: function() { return new Vector(0, 0)     } },
+	i:    {get: function() { return new Vector(1, 0)     } },
+	j:    {get: function() { return new Vector(0, 1)     } },
+	NaN:  {get: function() { return new Vector(NaN, NaN) } }
+});
 
 Vector.prototype['+'] = Vector.prototype.plus
 Vector.prototype['-'] = Vector.prototype.minus
