@@ -1,0 +1,198 @@
+<!doctype html>
+<html>
+	<head>
+		<script src="/socket.io/socket.io.js"></script>
+		<script src="vector.js"></script>
+		<script src="entity.js"></script>
+		<script src="color.js"></script>
+		<script src="ball.js"></script>
+		<script src="world.js"></script>
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+		<style>
+			html, body {width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden}
+		</style>
+
+		<title>Test</title>
+	</head>
+	<body>
+		<canvas id="canvas" height="500" width="750" style="margin: auto">Wat</canvas>
+		<script>
+			window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame  || window.oRequestAnimationFrame || function(callback) {
+					window.setTimeout(function() {callback(Date.now())}, 1000 / 60.0);
+				};
+
+
+			Array.prototype.contains = function(x) { return this.indexOf(x) != -1; }
+
+			Array.prototype.forEveryPair = function(callback, thisPtr) {
+				var l = this.length;
+				for(var i = 0; i < l; i++) {
+					for(var j = i + 1; j < l; j++) {
+						var ti = this[i], tj = this[j];
+						if(ti !== undefined && tj !== undefined)
+							callback.call(thisPtr, ti, tj, i, j, this);
+					}
+				}
+			};
+			Array.prototype.forAdjacentPairs = function(callback, thisPtr) {
+				var l = this.length;
+				for (var i = 0, j = 1; j < l; i = j++) {
+					var ti = this[i], tj = this[j];
+					if(ti !== undefined && tj !== undefined)
+						callback.call(thisPtr, ti, tj, i, j, this);
+				}
+			};
+
+
+			//Get canvas stuff
+			var canvas = $('#canvas').get(0);
+			var width = canvas.width, height = canvas.height;
+
+			// $(window).resize(function(){
+			// 	width = canvas.width = $(canvas).width();
+			// 	height = canvas.height = $(canvas).height();
+			// }).resize();
+
+			var ctx = canvas.getContext('2d');
+			var ball;
+			var opponents = {};
+
+			var keycodes = {
+				up:    87,
+				down:  83,
+				left:  65,
+				right: 68
+			};
+
+			var universe = new World(750, 500);
+
+			
+
+			var socket = io.connect('http://42nd.org:8090');
+			var name;
+			(function joinTheGame() {
+				var n = prompt('name?');
+				socket.emit('join', n, function(data) {
+					if(data) {
+						name = n;
+						startPlaying();
+					} else {
+						alert("Name taken!")
+						joinTheGame();
+					}
+				});
+			})();
+
+			socket.on('entityadded', function (data) {
+				var b = new Ball(
+					Vector.ify(data.position),
+					data.radius,
+					Color.ify(data.color)
+				);
+				b._id = data._id; //probably going to regret this
+				universe.addEntity(b);
+			});
+			socket.on('entitylost', function (id) {
+				delete universe.entities[id];
+			});
+			function startPlaying() {
+				socket.on('entityupdates', function (data) {
+					for(id in data) {
+						if(id in universe.entities) {
+							var edata = data[id];
+							var p = Vector.ify(edata.pos);
+							var c = Color.ify(edata.color);
+							var e = universe.entities[id];
+							e.position = p;
+							e.color = c;
+							e.radius = edata.radius
+						} else {
+							//console.log("Id "+id+" not found!");
+						}
+					}
+				});
+
+				// $(window).keydown(function(e) {
+				// 	var a = 100 * ball.getMass();
+				// 	var changed = false;
+				// 	if(keycodes.up    == e.which) changed = true, ball.forces.player.y = -a;
+				// 	if(keycodes.down  == e.which) changed = true, ball.forces.player.y = a;
+				// 	if(keycodes.left  == e.which) changed = true, ball.forces.player.x = -a;
+				// 	if(keycodes.right == e.which) changed = true, ball.forces.player.x = a;
+				// 	if(changed) socket.emit('playercontrol', ball.forces.player);
+				// }).keyup(function(e) {
+				// 	var changed = false;
+				// 	if(keycodes.up    == e.which) changed = true, ball.forces.player.y = 0;
+				// 	if(keycodes.down  == e.which) changed = true, ball.forces.player.y = 0;
+				// 	if(keycodes.left  == e.which) changed = true, ball.forces.player.x = 0;
+				// 	if(keycodes.right == e.which) changed = true, ball.forces.player.x = 0;
+				// 	if(changed) socket.emit('playercontrol', ball.forces.player);
+				// })
+				var target = new Vector();
+				$(canvas).mousemove(function(e) {
+					var offset = $(this).offset();
+					var x = e.pageX - offset.left;
+					var y = e.pageY - offset.top;
+					target.set(x, y);
+					socket.emit('playercontrol', target);
+				});
+
+				var lastt = Date.now();
+				function draw(t) {
+					//Calculate frame time
+					var dt = (t - lastt) / 1000.0;
+
+					// for(p in opponents) {
+					// 	opponents[p].update(dt);
+					// 	opponents[p].bounceOffWalls(750, 500);
+					// }
+					// ball.update(dt);
+					// ball.bounceOffWalls(750, 500);
+					//draw the black background
+					//ctx.clearRect(0, 0, width, height);
+
+					ctx.globalCompositeOperation = "source-over";
+					ctx.fillStyle = "black";
+					ctx.fillRect(0, 0, width, height);
+
+					//ball.drawTo(ctx);
+					//for(p in opponents) {
+					// 	opponents[p].drawTo(ctx);
+					// }
+					universe.update(dt);
+					universe.entities.forEach(function(e) {
+						e.drawTo(ctx);
+					});
+					/*
+					//Update physics of all the balls and snakes
+					balls.forEach(function(b1, i) {
+						for(var j = i+1; j <= balls.length - 1; j++) {
+							var b2 = balls[j];
+							b1.updateForceFrom(b2, dt);
+						}
+						//b1.forces.gravity = new Vector(0, 200).times(b1.getMass());
+						b1.update(dt);
+						b1.bounceOffWalls(width, height);
+					});
+					snakes[0].update(dt);
+					snakes[1].update(dt);
+
+
+					//draw all the things
+					ctx.globalCompositeOperation = "lighter";
+					balls.forEach(function(ball) {
+						ball.drawTo(ctx);
+					});
+					snakes[0].drawTo(ctx);
+					snakes[1].drawTo(ctx);
+					*/
+
+					//prepare for next frame
+					lastt = t;
+					requestAnimationFrame(draw);
+				}
+				requestAnimationFrame(draw);
+			}
+		</script>
+	</body>
+</html>
