@@ -1,4 +1,4 @@
-function Vector(x, y) {
+Vector = function Vector(x, y) {
 	this.x = x;
 	this.y = y;
 }
@@ -16,6 +16,10 @@ Vector.fromString = function(string) {
 		return null;
 	else
 		return new Vector(x, y);
+}
+Vector.ify = function(data) {
+	if(data instanceof Object && 'x' in data && 'y' in data)
+		return new Vector(data.x, data.y);
 }
 Vector.prototype = {
 	set: function(x, y) {
@@ -40,6 +44,11 @@ Vector.prototype = {
 	},
 	angle: function() {
 		return Math.atan2(this.x, this.y);
+	},
+	forceMaxLength: function(f) {
+		var l = this.length;
+		if(!isFinite(l)) this.set(0, 0);
+		else if(f < l) this.overEquals(f / l);
 	},
 	normalized: function() {
 		return this.over(this.length);

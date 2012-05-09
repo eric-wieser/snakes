@@ -1,4 +1,4 @@
-Ball = function(pos, radius, color) {
+Ball = function Ball(pos, radius, color) {
 	Entity.call(this, pos)
 	this.radius = radius;
 	this.color = color || 'red';
@@ -22,7 +22,7 @@ Object.defineProperty(Ball.prototype, 'id', {
 
 Ball.prototype.update = function(dt) {
 	//resistance = k * A * v^2
-	this.forces.resistance = this.velocity.times(0.05*-this.velocity.magnitude()*this.radius*2);
+	this.forces.resistance = this.velocity.times(0.05*-this.velocity.length*this.radius*2);
 	
 	Entity.prototype.update.call(this, dt);
 	this.forces.contact = {};
@@ -32,7 +32,7 @@ Ball.prototype.update = function(dt) {
 };
 
 Ball.prototype.touches = function(that) {
-	return this.position.minus(that.position).magnitude() <= this.radius + that.radius;
+	return this.position.minus(that.position).length <= this.radius + that.radius;
 };
 
 Ball.prototype.bounceOffWalls = function(width, height) {
@@ -55,18 +55,20 @@ Ball.prototype.bounceOffWalls = function(width, height) {
 };
 
 Ball.prototype.updateForceFrom = function(that) {
+	if(this.following == that || that.following == this) return;
 	if(that instanceof Array) {
 		for (var i = 0; i < that.length; i++) {
 			if(this != that[i]) this.updateForceFrom(that[i]);
 		}
 	} else {
 		var diff = this.position.minus(that.position);
-		var dist = diff.magnitude();
+		var dist = diff.length;
 		diff.overEquals(dist);
 
 		var overlap = this.radius + that.radius - dist;
 		if(overlap > 0 && dist != 0) {
-			var meanmass = 1 / ((1 / this.mass) + (1 / that.mass))
+			var meanmass = 1 / ((1 / this.mass) + (1 / that.mass));
+
 			overlap *= meanmass;
 			this.forces.contact[that.id] = diff.times(overlap*200);
 			that.forces.contact[this.id] = diff.times(-overlap*200);
@@ -92,13 +94,17 @@ Ball.prototype.drawTo = function(ctx) {
 };
 
 Ball.prototype.follow = function(that) {
+	this.following = that
+
 	target = this.position.minus(that.position)
 		.normalize()
 		.timesEquals(this.radius + that.radius)
 		.plusEquals(that.position);
 
-	this.forces.following[that.id] = target.minus(this.position).times(20000);
-	that.forces.following[this.id] = target.minus(this.position).times(-20000);
-	this.position = target
+	if(target.isFinite()) {
+		this.forces.following[that.id] = target.minus(this.position).times(this.mass);
+		that.forces.following[this.id] = target.minus(this.position).times(-that.mass);
+		this.position = target
+	}
 	return this;
 };

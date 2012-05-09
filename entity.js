@@ -8,9 +8,9 @@ Object.reduce = function(obj, f, start, thisPtr) {
 	return current;
 };
 
-Entity = function(position, velocity) {
-	this.position = position || Vector.zero();
-	this.velocity = velocity || Vector.zero();
+Entity = function Entity(position, velocity) {
+	this.position = position || Vector.zero;
+	this.velocity = velocity || Vector.zero;
 	this.forces = {};
 	this._id = Entity.generateIdNo();
 };
@@ -32,11 +32,12 @@ Object.defineProperty(Entity.prototype, 'acceleration', {
 				return Object.reduce(current, sumVectors, total);
 			else
 				return total;
-		}, Vector.zero()).overEquals(this.mass);
+		}, Vector.zero).overEquals(this.mass);
 	}
 });
 Entity.prototype.update = function(dt) {
 	this.velocity.plusEquals(this.acceleration.times(dt))
+	this.velocity.forceMaxLength(1000);
 	this.position.plusEquals(this.velocity.times(dt))
 	return this;
 };
@@ -44,3 +45,4 @@ Entity.prototype.clearForces = function(dt) {
 	this.forces = {}
 }
 Entity.prototype.mass = 1;
+Entity.prototype.touches = function() { return false; };

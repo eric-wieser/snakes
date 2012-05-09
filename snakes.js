@@ -20,11 +20,6 @@ Array.prototype.forAdjacentPairs = function(callback, thisPtr) {
 			callback.call(thisPtr, ti, tj, i, j, this);
 	}
 };
-Array.prototype.remove = function(from, to) {
-  var rest = this.slice((to || from) + 1 || this.length);
-  this.length = from < 0 ? this.length + from : from;
-  return this.push.apply(this, rest);
-};
 
 var alertFallback = true; 
 if (typeof console === "undefined" || typeof console.log === "undefined") { 
@@ -78,6 +73,12 @@ var keycodes = {
 		down:  101,
 		left:  100,
 		right: 102
+	},
+	hjkl: {
+		up:    74,
+		down:  75,
+		left:  72,
+		right: 76
 	}
 };
 
@@ -171,7 +172,7 @@ Snake.prototype.update = function(dt) {
 	
 	//Update ball colors
 	this.balls.forEach(function(b) {
-		b.color.lerp(this.color, 0.01);
+		b.color.lerp(this.color, 0.05);
 	}, this);
 
 	//Force them into a line
@@ -229,7 +230,17 @@ for(var i = 0; i <= 50; i++) {
 
 //Add the two snakes
 
-if(location.hash == '#3') {
+if(location.search == '?4') {
+	snakes[0] = new Snake(10, new Color(255, 128, 0), new Vector(  universe.width/3,   universe.height / 3));
+	snakes[0].controls = keycodes.wasd
+	snakes[1] = new Snake(10, new Color(255, 64, 64), new Vector(2*universe.width/3,   universe.height / 3));
+	snakes[1].controls = keycodes.arrows
+	snakes[2] = new Snake(10, new Color(0, 128, 255), new Vector(  universe.width/3, 2*universe.height / 3));
+	snakes[2].controls = keycodes.numpad
+	snakes[3] = new Snake(10, new Color(64, 64, 255), new Vector(2*universe.width/3, 2*universe.height / 3));
+	snakes[3].controls = keycodes.hjkl
+}
+else if(location.search == '?3') {
 	snakes[0] = new Snake(10, new Color(255, 128, 0), new Vector(  universe.width/3,   universe.height / 3));
 	snakes[0].controls = keycodes.wasd
 	snakes[1] = new Snake(10, new Color(0, 255, 128), new Vector(2*universe.width/3,   universe.height / 3));
@@ -285,7 +296,7 @@ var controlStyle = "absolute";
 $(window).keydown(function(e) {
 	snakes.forEach(function(s) {
 		var h = s.head;
-		if(!("player" in h.forces)) h.forces.player = Vector.zero()
+		if(!("player" in h.forces)) h.forces.player = Vector.zero
 		var a = 400* h.mass;
 		if(controlStyle == "absolute") {
 			if(s.controls.up    == e.which) h.forces.player.y = -a;
@@ -297,7 +308,7 @@ $(window).keydown(function(e) {
 }).keyup(function(e) {
 	snakes.forEach(function(s) {
 		var h = s.head;
-		if(!("player" in h.forces)) h.forces.player = Vector.zero()
+		if(!("player" in h.forces)) h.forces.player = Vector.zero
 
 		if(controlStyle == "absolute") {
 			if(s.controls.up    == e.which) h.forces.player.y = 0;

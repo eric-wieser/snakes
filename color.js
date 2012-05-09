@@ -51,7 +51,7 @@ Color.random = function(r, g, b, range) {
 Color.clipComponent = function(x) {
 	return x > 255 ? 255 : x < 0 ? 0 : x;
 }
-Color.fromJSON = function(data) {
+Color.ify = function(data) {
 	return new Color(data.r, data.g, data.b);
 }
 
