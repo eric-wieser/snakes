@@ -15,7 +15,7 @@ var onHeadHit = function(thing) {
 	var that = thing.ownerSnake;
 	if(that == undefined) {
 		if(this.eat(thing)) {
-			console.log(this.color + ' ate a ball');
+			//console.log(this.color + ' ate a ball');
 			return false; //prevent balls interacting
 		}
 	}
@@ -23,7 +23,7 @@ var onHeadHit = function(thing) {
 		if(this.canEat(thing)) {
 			that.eatenAt(thing);
 			this.eat(thing);
-			console.log(this.color +' hit '+that.color);
+			//console.log(this.color +' hit '+that.color);
 			return false; //prevent balls interacting
 		}
 	}
