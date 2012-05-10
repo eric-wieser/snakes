@@ -22,7 +22,7 @@ app.get('/local', function (req, res) {
 	res.sendfile(__dirname + '/snakes.html');
 });
 var players = {};
-var universe = new World(1000, 800);
+var universe = new World(2000, 2000);
 
 var snakes = [];
 
@@ -34,7 +34,7 @@ io.sockets.on('connection', function (socket) {
 	socket.on('join', function(n, callback) {
 		if(!(n in players)) {
 			name = n;
-			console.log("Name set!");
+			console.log("Player joined:", n);
 
 			universe.entities.forEach(function(e) {
 				socket.emit('entityadded', {
@@ -74,6 +74,7 @@ io.sockets.on('connection', function (socket) {
 	socket.on('disconnect', function () {
 		if(name) {
 			socket.broadcast.emit('playerquit', {name: name});
+			console.log("Player quit:", name);
 			snake.balls.forEach(function(b) {
 				universe.removeEntity(b);
 			})
@@ -99,6 +100,8 @@ universe.onEntityAdded.updateClients = function(e) {
 }
 updateClients = function() {
 	var data = {};
+	data.e = {};
+	data.s = {};
 	universe.entities.forEach(function(e) {
 		var entityUpdate = {};
 		entityUpdate.pos = e.position;
@@ -109,8 +112,11 @@ updateClients = function() {
 			if(e == e.ownerSnake.head) entityUpdate.head = true;
 		}
 
-		data[e._id] = entityUpdate;
+		data.e[e._id] = entityUpdate;
 	});
+	Object.forEach(players, function(snake, name) {
+		data.s[name] = snake.balls.pluck('_id');
+	})
 	io.sockets.emit('entityupdates', data);
 }
 var randomInt = function(min, max) {
@@ -192,6 +198,6 @@ stdin.on('data', function(chunk) {
 		generateBalls(+matches[1]);
 	} else {
 		console.log("sending message");
-		io.sockets.emit('servermessage', "> "+chunk);
+		io.sockets.emit('servermessage', ""+chunk);
 	}
 });

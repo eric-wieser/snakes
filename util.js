@@ -39,7 +39,7 @@ Array.prototype.forEveryPair = function(callback, thisPtr) {
 	}
 };
 Object.forEach = function(obj, f, thisPtr) {
-	for(i in obj) {
+	for(var i in obj) {
 		var oi = obj[i];
 		if(oi !== undefined) {
 			f.call(thisPtr, oi, i, obj);
@@ -64,7 +64,9 @@ Array.prototype.forAdjacentPairs = function(callback, thisPtr) {
 			callback.call(thisPtr, ti, tj, i, j, this);
 	}
 };
-
+Array.prototype.pluck = function(property) {
+	return this.map(function(x) {return x[property]; });
+};
 Object.isEmpty = function(obj) {
 	for (var prop in obj) if (obj.hasOwnProperty(prop)) return false;
 	return true;

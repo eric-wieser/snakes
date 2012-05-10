@@ -10,16 +10,26 @@
 		<script src="world.js"></script>
 		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Terminal+Dosis+Light|Ubuntu:300|Ubuntu:300italic" />
 		<style>
-			html, body {background: #202020; width: 100%; height: 100%; margin: 0; padding: 0 }
-			#message {background: #c0c0c0; font-size: 20px; color: #202020; font-family: sans-serif; }
+			html, body {
+				background: #202020; width: 100%; height: 100%; margin: 0; padding: 0;
+				font-family: 'Terminal Dosis Light', Arial, sans-serif;
+			}
+			#message {
+				color: white;
+				position: absolute;
+				top:0;
+				left: 0;
+				right: 0;
+				font-size: 30px;
+				text-align: center;
+			}
 			#scores {
 				position: absolute;
-				bottom: 0;
+				bottom: 5px;
 				left: 0;
 				right: 0;
 				font-size: 30px;
 				line-height: 35px;
-				font-family: 'Terminal Dosis Light', Arial, sans-serif;
 				padding: 0;
 				margin: 0;
 				width: 100%;
@@ -45,7 +55,7 @@
 	<body>
 		<div id="message"></div>
 		<ul id="scores"></ul>
-		<canvas id="canvas" height="800" width="1000" style="margin: auto; display: block;">Wat</canvas>
+		<canvas id="canvas" style="width:100%; height: 100%; display: block;">Wat</canvas>
 		<script>
 			window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame  || window.oRequestAnimationFrame || function(callback) {
 					window.setTimeout(function() {callback(Date.now())}, 1000 / 60.0);
@@ -55,6 +65,11 @@
 			//Get canvas stuff
 			var canvas = $('#canvas').get(0);
 			var width = canvas.width, height = canvas.height;
+
+			$(window).resize(function(){
+				width = canvas.width = $(canvas).width();
+				height = canvas.height = $(canvas).height();
+			}).resize();
 
 			// $(window).resize(function(){
 			// 	width = canvas.width = $(canvas).width();
@@ -78,6 +93,7 @@
 
 			var socket = io.connect('http://42nd.org:8090');
 			var name;
+			var head;
 			(function joinTheGame() {
 				var n = prompt('name?');
 				socket.emit('join', n, function(data) {
@@ -117,9 +133,8 @@
 			});
 			function startPlaying() {
 				socket.on('entityupdates', function (data) {
-					for(var id in data) {
+					Object.forEach(data.e, function(edata, id) {
 						if(id in universe.entities) {
-							var edata = data[id];
 							var p = Vector.ify(edata.pos);
 							var c = Color.ify(edata.color);
 							var e = universe.entities[id];
@@ -130,15 +145,17 @@
 
 							//console.log("Id "+id+" not found!");
 						}
-					}
+					});
+					var snake = data.s[name];
+					head = universe.entities[snake[0]];
 				});
 
 				var target = new Vector();
 				$(document).mousemove(function(e) {
 					var offset = $(canvas).offset();
-					var x = e.pageX - offset.left;
-					var y = e.pageY - offset.top;
-					target.set(x, y);
+					var x = e.pageX - offset.left - width / 2;
+					var y = e.pageY - offset.top - height / 2;
+					target.set(head.position.x + x, head.position.y + y);
 					socket.emit('playercontrol', target);
 				});
 
@@ -146,17 +163,22 @@
 				function draw(t) {
 					//Calculate frame time
 					var dt = (t - lastt) / 1000.0;
+					ctx.clearRect(0, 0, width, height);
+					ctx.save();
+					if(head) {
+						ctx.translate(width/2 -head.position.x, height / 2 - head.position.y);
+						ctx.globalCompositeOperation = "source-over";
+						ctx.fillStyle = "black";
+						ctx.fillRect(0, 0, 2000, 2000);
 
-					ctx.globalCompositeOperation = "source-over";
-					ctx.fillStyle = "black";
-					ctx.fillRect(0, 0, width, height);
+						universe.entities.forEach(function(e) {
+							e.drawTo(ctx);
+						});
 
-					universe.entities.forEach(function(e) {
-						e.drawTo(ctx);
-					});
-
+					}
 					//prepare for next frame
 					lastt = t;
+					ctx.restore();
 					requestAnimationFrame(draw);
 				}
 				requestAnimationFrame(draw);
