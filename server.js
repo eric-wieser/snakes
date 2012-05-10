@@ -103,8 +103,10 @@ updateClients = function() {
 		entityUpdate.pos = e.position;
 		entityUpdate.color = e.color;
 		entityUpdate.radius = e.radius;
-		if(e.ownerSnake && e.ownerSnake.name)
+		if(e.ownerSnake && e.ownerSnake.name) {
 			entityUpdate.playername = e.ownerSnake.name;
+			if(e == e.ownerSnake.head) entityUpdate.head = true;
+		}
 
 		data[e._id] = entityUpdate;
 	});
