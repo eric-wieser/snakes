@@ -166,7 +166,15 @@ i = setInterval(function() {
 	});
 	updateClients();
 	lastt = t;
-}, 1000 / 60.0)
+}, 1000 / 60.0);
+
+setInterval(function() {
+	scores = {};
+	var mass = universe.mass();
+	Object.forEach(player, function(s) {
+
+	});
+}, 500);
 
 
 var stdin = process.openStdin();
@@ -175,7 +183,7 @@ stdin.on('data', function(chunk) {
 	if(/^\s*players/.test(chunk)) {
 		console.log(Object.keys(players).join(', '));
 	} else if(/^\s*mass/.test(chunk)) {
-		console.log('Total mass of the universe: '+universe.totalMass());
+		console.log('Total mass of the universe: '+universe.totalMass);
 	} else if(matches = /^\s*balls (\d+)/.exec(chunk)) {
 		generateBalls(+matches[1]);
 	} else {

@@ -192,7 +192,7 @@ $(window).keydown(function(e) {
 var scoreValues = $('.scores').children();
 var scoreBarElems = $('.score-bar').children();
 setInterval(function() {
-	var mass = universe.totalMass();
+	var mass = universe.totalMass;
 	var mostLeft = 0;
 	var mostRight = 0;
 	snakes.forEach(function(s, i) {
