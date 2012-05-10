@@ -1,15 +1,16 @@
-Snake = function Snake(length, color, pos) {
+Snake = function Snake(length, color, pos, world) {
 	var ballSize = 10;
 	this.color = color;
 	this.balls = [];
+	this.world = world;
 	this.balls[0] = this.head = new Ball(pos, ballSize, color.randomized(16))
 	this.maxMass = this.head.mass;
 	for (var i = 1; i < length; i++) {
 		this.addBall(new Ball(new Vector(), ballSize, color.randomized(16)));
 	};
 	this.balls.forEach(function(b) {
-		universe.addEntity(b);
-	});
+		this.world.addEntity(b);
+	}, this);
 }
 var onHeadHit = function(thing) {
 	var that = thing.ownerSnake;
@@ -135,7 +136,7 @@ Snake.prototype.update = function(dt) {
 	var last = this.tail;
 	if(!(last.mass > 0)) { //NaNs
 		this.balls.pop();
-		universe.removeEntity(last);
+		this.world.removeEntity(last);
 	}
 	
 	//Update ball colors

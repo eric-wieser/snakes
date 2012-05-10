@@ -8,6 +8,7 @@ require('./vector');
 require('./entity');
 require('./ball');
 require('./world');
+require('./snake');
 
 
 var app = express.createServer();
@@ -48,8 +49,10 @@ io.sockets.on('connection', function (socket) {
 			snake = players[n] = new Snake(
 				10,
 				Color.random(),
-				universe.randomPosition()
+				universe.randomPosition(),
+				universe
 			);
+			snake.name = name;
 			snake.target = snake.head.position.clone();
 			snakes.push(snake);
 			callback(true);
@@ -100,6 +103,8 @@ updateClients = function() {
 		entityUpdate.pos = e.position;
 		entityUpdate.color = e.color;
 		entityUpdate.radius = e.radius;
+		if(e.ownerSnake && e.ownerSnake.name)
+			entityUpdate.playername = e.ownerSnake.name;
 
 		data[e._id] = entityUpdate;
 	});
