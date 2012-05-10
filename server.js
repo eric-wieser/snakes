@@ -169,11 +169,15 @@ i = setInterval(function() {
 }, 1000 / 60.0);
 
 setInterval(function() {
-	scores = {};
-	var mass = universe.mass();
-	Object.forEach(player, function(s) {
-
+	scores = []
+	var mass = universe.totalMass;
+	Object.forEach(players, function(s, name) {
+		scores.push([name, Math.round(1000*s.mass / mass), s.color.toString()])
 	});
+	scores.sort(function(a, b){ 
+		return a[1] > b[1] ? 1 : a[1] < b[1] ? -1 : 0;
+	});
+	io.sockets.emit('scores', scores);
 }, 500);
 
 

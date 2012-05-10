@@ -8,16 +8,43 @@
 		<script src="color.js"></script>
 		<script src="ball.js"></script>
 		<script src="world.js"></script>
-		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Terminal+Dosis+Light|Ubuntu:300|Ubuntu:300italic" />
 		<style>
-			html, body {background: #202020; width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden}
+			html, body {background: #202020; width: 100%; height: 100%; margin: 0; padding: 0 }
 			#message {background: #c0c0c0; font-size: 20px; color: #202020; font-family: sans-serif; }
+			#scores {
+				position: absolute;
+				bottom: 0;
+				left: 0;
+				right: 0;
+				font-size: 30px;
+				line-height: 35px;
+				font-family: 'Terminal Dosis Light', Arial, sans-serif;
+				padding: 0;
+				margin: 0;
+				width: 100%;
+				display: table;
+			}
+			#scores li {
+				display: table-row;
+				color: white;
+			}
+			#scores li span {
+				display: table-cell;
+				width: 50%;
+			}
+			#scores li span.name {
+				font-weight: bold;
+				text-align: right;
+				padding-right: 0.5em;
+			}
 		</style>
 
 		<title>Test</title>
 	</head>
 	<body>
 		<div id="message"></div>
+		<ul id="scores"></ul>
 		<canvas id="canvas" height="800" width="1000" style="margin: auto; display: block;">Wat</canvas>
 		<script>
 			window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame  || window.oRequestAnimationFrame || function(callback) {
@@ -79,9 +106,18 @@
 			socket.on('servermessage', function (str) {
 				$('#message').text(str);
 			});
+			socket.on('scores', function (scores) {
+				var s = $('#scores').empty();
+				scores.forEach(function(score) {
+					$('<li />').append(
+						$('<span class="name"/>').text(score[0]), " ", 
+						$('<span />').text(score[1])
+					).css('color', score[2]).appendTo(s);
+				})
+			});
 			function startPlaying() {
 				socket.on('entityupdates', function (data) {
-					for(id in data) {
+					for(var id in data) {
 						if(id in universe.entities) {
 							var edata = data[id];
 							var p = Vector.ify(edata.pos);
@@ -91,6 +127,7 @@
 							e.color = c;
 							e.radius = edata.radius
 						} else {
+
 							//console.log("Id "+id+" not found!");
 						}
 					}
