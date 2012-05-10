@@ -2,6 +2,7 @@
 <html>
 	<head>
 		<script src="/socket.io/socket.io.js"></script>
+		<script src="util.js"></script>
 		<script src="vector.js"></script>
 		<script src="entity.js"></script>
 		<script src="color.js"></script>
@@ -10,38 +11,18 @@
 		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
 		<style>
 			html, body {background: #202020; width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden}
+			#message {background: #c0c0c0; font-size: 20px; color: #202020; font-family: sans-serif; }
 		</style>
 
 		<title>Test</title>
 	</head>
 	<body>
+		<div id="message"></div>
 		<canvas id="canvas" height="800" width="1000" style="margin: auto; display: block;">Wat</canvas>
 		<script>
 			window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame  || window.oRequestAnimationFrame || function(callback) {
 					window.setTimeout(function() {callback(Date.now())}, 1000 / 60.0);
 				};
-
-
-			Array.prototype.contains = function(x) { return this.indexOf(x) != -1; }
-
-			Array.prototype.forEveryPair = function(callback, thisPtr) {
-				var l = this.length;
-				for(var i = 0; i < l; i++) {
-					for(var j = i + 1; j < l; j++) {
-						var ti = this[i], tj = this[j];
-						if(ti !== undefined && tj !== undefined)
-							callback.call(thisPtr, ti, tj, i, j, this);
-					}
-				}
-			};
-			Array.prototype.forAdjacentPairs = function(callback, thisPtr) {
-				var l = this.length;
-				for (var i = 0, j = 1; j < l; i = j++) {
-					var ti = this[i], tj = this[j];
-					if(ti !== undefined && tj !== undefined)
-						callback.call(thisPtr, ti, tj, i, j, this);
-				}
-			};
 
 
 			//Get canvas stuff
@@ -85,15 +66,19 @@
 
 			socket.on('entityadded', function (data) {
 				var b = new Ball(
-					Vector.ify(data.position),
-					data.radius,
-					Color.ify(data.color)
+					Vector.ify(data.p),
+					data.r,
+					Color.ify(data.c)
 				);
-				b._id = data._id; //probably going to regret this
+				b._id = data.i; //probably going to regret this
 				universe.addEntity(b);
 			});
 			socket.on('entitylost', function (id) {
 				delete universe.entities[id];
+			});
+			socket.on('servermessage', function (str) {
+				console.log(str);
+				$('#message').text(str);
 			});
 			function startPlaying() {
 				socket.on('entityupdates', function (data) {
@@ -129,8 +114,8 @@
 				// 	if(changed) socket.emit('playercontrol', ball.forces.player);
 				// })
 				var target = new Vector();
-				$(canvas).mousemove(function(e) {
-					var offset = $(this).offset();
+				$(document).mousemove(function(e) {
+					var offset = $(canvas).offset();
 					var x = e.pageX - offset.left;
 					var y = e.pageY - offset.top;
 					target.set(x, y);
@@ -168,7 +153,7 @@
 					balls.forEach(function(b1, i) {
 						for(var j = i+1; j <= balls.length - 1; j++) {
 							var b2 = balls[j];
-							b1.updateForceFrom(b2, dt);
+							b1.interactWith(b2, dt);
 						}
 						//b1.forces.gravity = new Vector(0, 200).times(b1.getMass());
 						b1.update(dt);

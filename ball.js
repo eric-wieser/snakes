@@ -4,6 +4,7 @@ Ball = function Ball(pos, radius, color) {
 	this.color = color || 'red';
 
 	this.forces.contact = {};
+	Object.defineEvent(this, 'onInteracted', true);
 }
 Ball.n = 0;
 Ball.prototype = new Entity;
@@ -54,27 +55,25 @@ Ball.prototype.bounceOffWalls = function(width, height) {
 	return this;
 };
 
-Ball.prototype.updateForceFrom = function(that) {
-	if(this.following == that || that.following == this) return;
-	if(that instanceof Array) {
-		for (var i = 0; i < that.length; i++) {
-			if(this != that[i]) this.updateForceFrom(that[i]);
-		}
-	} else {
+Ball.prototype.interactWith = function(that) {
+	if(this.following == that || that.following == this) return false;
+	else {
 		var diff = this.position.minus(that.position);
 		var dist = diff.length;
 		diff.overEquals(dist);
 
 		var overlap = this.radius + that.radius - dist;
-		if(overlap > 0 && dist != 0) {
+		if(overlap > 0 && dist != 0 && that.onInteracted(this) && this.onInteracted(that)) {
 			var meanmass = 1 / ((1 / this.mass) + (1 / that.mass));
 
 			overlap *= meanmass;
 			this.forces.contact[that.id] = diff.times(overlap*200);
 			that.forces.contact[this.id] = diff.times(-overlap*200);
+			return true;
 		}
 	}
-	return this;
+
+	return false;
 }
 
 Ball.prototype.clearForces = function() {

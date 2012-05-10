@@ -81,140 +81,8 @@ var keycodes = {
 		right: 76
 	}
 };
-
-
 var snakes = [];
-var Snake = function(length, color, pos) {
-	var ballSize = 10;
-	this.color = color;
-	this.balls = [];
-	this.balls[0] = this.head = new Ball(pos, ballSize, color.randomized(16))
-	this.maxMass = this.head.mass;
-	for (var i = 1; i < length; i++) {
-		this.addBall(new Ball(new Vector(), ballSize, color.randomized(16)));
-	};
-	this.balls.forEach(function(b) {
-		universe.addEntity(b);
-	});
-}
-Object.defineProperty(Snake.prototype, 'tail', {
-	get: function() { return this.balls[this.balls.length - 1]; }
-});
-Object.defineProperty(Snake.prototype, 'mass', {
-	get: function() { return this.balls.reduce(function(sum, x) { return sum + x.mass }, 0); }
-});
-Object.defineProperty(Snake.prototype, 'length', {
-	get: function() { return this.balls.length; }
-});
-Snake.prototype.drawTo = function(ctx) {
-	for (var i = 0; i < this.balls.length; i++) {
-		this.balls[i].drawTo(ctx);
-	};
-	ctx.save();
-	ctx.fillStyle = "white";
-	ctx.beginPath();
-	ctx.arc(this.head.position.x, this.head.position.y, 5, 0, Math.PI * 2, false);
-	ctx.fill();
-	ctx.restore();
-	return this;
-};
-Snake.prototype.addBall = function(ball) {
-	ball.clearForces();
-	ball.velocity.set(0, 0);
 
-	var pos = this.tail.position
-	var dist = ball.radius + this.tail.radius;
-	for(var j = 0; j < 100; j++) {
-		var p = Vector.fromPolarCoords(dist, Math.random() * Math.PI * 2)
-		ball.position = p.plusEquals(pos);
-		var collides = this.balls.some(function(b) {b.touches(ball)});
-		if(collides) break;
-	}
-
-	this.balls.push(ball);
-}
-Snake.prototype.canEat = function(ball) {
-	if(this.balls.contains(ball)) return false;
-	if(this.maxMass * 2 < ball.mass) return false;
-	return true;
-}
-Snake.prototype.eat = function(ball) {
-	if(!this.canEat(ball)) return false;
-
-	this.maxMass *= 1.05;
-	this.addBall(ball);
-	return true;
-}
-var balls = [];
-Snake.prototype.update = function(dt) {
-
-	//Shortening
-	this.balls.forAdjacentPairs(function(a, b, ai, bi) {
-		var rate = 50;// + 5*(this.length - ai);
-		var aMass = a.mass;
-		var diff = aMass - this.maxMass;
-		if(diff > rate) {
-			a.mass = aMass - rate;
-			b.mass += rate;
-		} else if(diff < -rate) {
-			a.mass = aMass + rate;
-			b.mass -= rate;
-		} else {
-			a.mass = this.maxMass;
-			b.mass += diff;
-		}
-	}, this);
-	var last = this.tail;
-	if(!(last.mass > 0)) { //NaNs
-		this.balls.pop();
-		universe.removeEntity(last);
-	}
-	
-	//Update ball colors
-	this.balls.forEach(function(b) {
-		b.color.lerp(this.color, 0.05);
-	}, this);
-
-	//Force them into a line
-	this.balls.forAdjacentPairs(function(b1, b2) {
-		b2.follow(b1);
-	}, this);
-
-	//Eat free balls
-	balls.forEach(function(ball, i) {
-		if(ball.touches(this.head) && this.eat(ball)) {
-			balls.splice(i, 1);
-		}
-	}, this);
-
-	//Snake/snake collisions
-	snakes.forEach(function(that) {
-		if(that == this) return;
-		that.balls.forEach(function(segment, index) {
-			//Eat and split if the head makes contact
-			if(segment != that.head && this.head.touches(segment) && this.eat(segment)) {
-				var removed = that.balls.splice(index);
-				removed.shift();
-				var removedMass = removed.reduce(function(sum, b) {return sum + b.mass}, 0)
-				var remainingMass = this.mass;
-				//Reverse the snake if too much was taken off
-				if(removedMass > remainingMass) {
-					delete that.head.forces.player;
-					var r = that.balls;
-					that.balls = removed.reverse();
-					that.head = that.balls[0];
-					removed = r;
-				}
-				removed.forEach(function(b) {
-					balls.push(b);
-					b.clearForces();
-				});
-			}
-		}, this);
-	}, this);
-
-
-};
 //Generate the gray balls
 for(var i = 0; i <= 50; i++) {
 	var r = Math.random();
@@ -224,8 +92,9 @@ for(var i = 0; i <= 50; i++) {
 	else if(r < 0.66) color = new Color(128, 128, 128), radius = randomInt(10, 20);
 	else              color = new Color( 64,  64,  64), radius = randomInt(20, 40);
 
-	balls[i] = new Ball(new Vector(randomInt(universe.width), randomInt(universe.height)), radius, color);
-	universe.addEntity(balls[i]);
+	universe.addEntity(
+		new Ball(universe.randomPosition(), radius, color)
+	);
 }
 
 //Add the two snakes
@@ -278,7 +147,7 @@ function draw(t) {
 
 	//draw all the things
 	ctx.globalCompositeOperation = "lighter";
-	balls.forEach(function(ball) {
+	universe.entities.forEach(function(ball) {
 		ball.drawTo(ctx);
 	});
 	snakes.forEach(function(snake) {

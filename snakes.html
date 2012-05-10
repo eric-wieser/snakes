@@ -1,9 +1,15 @@
 <!DOCTYPE html>
-<html>
+<html xmlns:og="http://opengraphprotocol.org/schema/">
 	<head>
 		<title>Snakes</title>
 		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
 		<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Terminal+Dosis+Light|Ubuntu:300|Ubuntu:300italic" />
+		<meta property="og:title" content="Snakes - a game written in Javascript and HTML5 canvas"/>
+		<meta property="og:type" content="website"/>
+		<meta property="og:url" content="http://42nd.org:8090/snakes.html"/>
+		<meta property="og:description" content="A game for two (or more) players. Control the snakes with the arrow keys and WASD. Eat or be eaten!"/>
+		<meta property="og:image" content="http://eric-wieser.tk/images/snaps/snakes.png" />
+		<meta property="fb:admins" content="eric.wieser"/>
 		<style>
 			html, body, canvas {width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; }
 			.scores div {
@@ -14,11 +20,13 @@
 			}
 		</style>
 		<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE9"> 
+		<script src="util.js"></script>
 		<script src="vector.js"></script>
 		<script src="entity.js"></script>
 		<script src="color.js"></script>
 		<script src="ball.js"></script>
 		<script src="world.js"></script>
+		<script src="snake.js"></script>
 	</head>
 	<body>
 		<div class="scores">

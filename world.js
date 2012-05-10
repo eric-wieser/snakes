@@ -1,21 +1,3 @@
-Object.defineEvent = function(object, name, cancellable) {
-	if(cancellable) {
-		object[name] = function e() {
-			for(i in e) {
-				if(e[i].apply(object, Array.prototype.slice.call(arguments)) === false)
-					return false;
-			}
-			return true;
-		}
-	} else {
-		object[name] = function e() {
-			for(i in e) {
-				e[i].apply(object, Array.prototype.slice.call(arguments));
-			}
-		}
-	}
-}
-
 World = function(width, height) {
 	this.entities = [];
 	this.width = width || 0;
@@ -26,7 +8,7 @@ World = function(width, height) {
 }
 World.prototype.update = function(dt) {
 	this.entities.forEveryPair(function(e1, e2) {
-		e1.updateForceFrom(e2)
+		e1.interactWith(e2)
 	});
 	this.entities.forEach(function(e) {
 		e.update(dt);
