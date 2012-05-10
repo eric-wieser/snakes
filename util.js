@@ -1,20 +1,30 @@
 Object.defineEvent = function(object, name, cancellable) {
 	if(cancellable) {
-		object[name] = function e() {
-			for(i in e) {
-				if(e[i].apply(object, Array.prototype.slice.call(arguments)) === false)
+		object[name] = function fire() {
+			for(var i in fire) {
+				if(fire[i].apply(object, Array.prototype.slice.call(arguments)) === false)
 					return false;
 			}
 			return true;
 		}
 	} else {
-		object[name] = function e() {
-			for(i in e) {
-				e[i].apply(object, Array.prototype.slice.call(arguments));
+		object[name] = function fire() {
+			for(var i in fire) {
+				fire[i].apply(object, Array.prototype.slice.call(arguments));
 			}
 		}
 	}
 }
+
+Object.reduce = function(obj, f, start, thisPtr) {
+	current = start || 0;
+	for(var k in obj) {
+		if(obj.hasOwnProperty(k)) {
+			current = f.call(thisPtr, current, obj[k], k, obj)
+		}
+	}
+	return current;
+};
 
 Array.prototype.contains = function(x) { return this.indexOf(x) != -1; }
 
@@ -37,8 +47,8 @@ Object.forEach = function(obj, f, thisPtr) {
 	}
 }
 Object.forEachPair = function(obj, f, thisPtr) {
-	for(i in obj) {
-		for(j in obj) {
+	for(var i in obj) {
+		for(var j in obj) {
 			var oi = obj[i], oj = obj[j];
 			if(i < j && oi !== undefined && oj !== undefined) {
 				f.call(thisPtr, oi, oj, i, j, obj);

@@ -1,12 +1,3 @@
-Object.reduce = function(obj, f, start, thisPtr) {
-	current = start || 0;
-	for(k in obj) {
-		if(obj.hasOwnProperty(k)) {
-			current = f.call(thisPtr, current, obj[k], k, obj)
-		}
-	}
-	return current;
-};
 
 Entity = function Entity(position, velocity) {
 	this.position = position || Vector.zero;
