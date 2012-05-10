@@ -32,7 +32,10 @@ io.sockets.on('connection', function (socket) {
 	var name;
 	var snake;
 	socket.on('join', function(n, callback) {
-		if(!(n in players)) {
+		n = n + "";
+		if(n.length < 3) {
+			callback(false, true);
+		} else if(!(n in players)) {
 			name = n;
 			console.log("Player joined:", n);
 
@@ -114,9 +117,13 @@ updateClients = function() {
 
 		data.e[e._id] = entityUpdate;
 	});
+	// Object.forEach(players, function(snake, name) {
+	// 	data.s[name] = snake.balls.pluck('_id');
+	// });
 	Object.forEach(players, function(snake, name) {
-		data.s[name] = snake.balls.pluck('_id');
-	})
+	 	data.s[name] = snake.head._id;
+	});
+
 	io.sockets.emit('entityupdates', data);
 }
 var randomInt = function(min, max) {

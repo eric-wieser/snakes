@@ -94,6 +94,7 @@
 			var socket = io.connect('http://42nd.org:8090');
 			var name;
 			var head;
+			var heads;
 			var viewOrigin = Vector.zero;
 			function updateTranslation() {
 				var border = 10;
@@ -130,13 +131,17 @@
 				viewOrigin = new Vector(x, y);
 			}
 			(function joinTheGame() {
-				var n = prompt('name?');
-				socket.emit('join', n, function(data) {
+				var n = prompt('name?', localStorage['name'] || '');
+				socket.emit('join', n, function(data, silly) {
 					if(data) {
-						name = n;
+						localStorage['name'] = name = n;
 						startPlaying();
 					} else {
-						alert("Name taken!")
+						if(silly) {
+							alert("Seriously, get a better name")
+						} else {
+							alert("Name taken!")
+						}
 						joinTheGame();
 					}
 				});
@@ -181,8 +186,13 @@
 							//console.log("Id "+id+" not found!");
 						}
 					});
-					var snake = data.s[name];
-					head = universe.entities[snake[0]];
+					var newHeads = {};
+					Object.forEach(data.s, function(id, name) {
+						newHeads[name] = universe.entities[id];
+					});
+					head = newHeads[name];
+					heads = newHeads;
+
 					socket.emit('playercontrol', target.plus(viewOrigin));
 				});
 
@@ -207,7 +217,12 @@
 						universe.entities.forEach(function(e) {
 							e.drawTo(ctx);
 						});
-
+						ctx.fillStyle = "white";
+						Object.forEach(heads, function(h) {
+							ctx.beginPath();
+							ctx.arc(h.position.x, h.position.y, h.radius / 2, 0, Math.PI * 2, false);
+							ctx.fill();
+						});
 					}
 					//prepare for next frame
 					lastt = t;
