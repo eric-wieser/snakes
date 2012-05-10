@@ -77,7 +77,6 @@
 				delete universe.entities[id];
 			});
 			socket.on('servermessage', function (str) {
-				console.log(str);
 				$('#message').text(str);
 			});
 			function startPlaying() {
@@ -97,22 +96,6 @@
 					}
 				});
 
-				// $(window).keydown(function(e) {
-				// 	var a = 100 * ball.getMass();
-				// 	var changed = false;
-				// 	if(keycodes.up    == e.which) changed = true, ball.forces.player.y = -a;
-				// 	if(keycodes.down  == e.which) changed = true, ball.forces.player.y = a;
-				// 	if(keycodes.left  == e.which) changed = true, ball.forces.player.x = -a;
-				// 	if(keycodes.right == e.which) changed = true, ball.forces.player.x = a;
-				// 	if(changed) socket.emit('playercontrol', ball.forces.player);
-				// }).keyup(function(e) {
-				// 	var changed = false;
-				// 	if(keycodes.up    == e.which) changed = true, ball.forces.player.y = 0;
-				// 	if(keycodes.down  == e.which) changed = true, ball.forces.player.y = 0;
-				// 	if(keycodes.left  == e.which) changed = true, ball.forces.player.x = 0;
-				// 	if(keycodes.right == e.which) changed = true, ball.forces.player.x = 0;
-				// 	if(changed) socket.emit('playercontrol', ball.forces.player);
-				// })
 				var target = new Vector();
 				$(document).mousemove(function(e) {
 					var offset = $(canvas).offset();
@@ -127,50 +110,13 @@
 					//Calculate frame time
 					var dt = (t - lastt) / 1000.0;
 
-					// for(p in opponents) {
-					// 	opponents[p].update(dt);
-					// 	opponents[p].bounceOffWalls(750, 500);
-					// }
-					// ball.update(dt);
-					// ball.bounceOffWalls(750, 500);
-					//draw the black background
-					//ctx.clearRect(0, 0, width, height);
-
 					ctx.globalCompositeOperation = "source-over";
 					ctx.fillStyle = "black";
 					ctx.fillRect(0, 0, width, height);
 
-					//ball.drawTo(ctx);
-					//for(p in opponents) {
-					// 	opponents[p].drawTo(ctx);
-					// }
-					//universe.update(dt);
 					universe.entities.forEach(function(e) {
 						e.drawTo(ctx);
 					});
-					/*
-					//Update physics of all the balls and snakes
-					balls.forEach(function(b1, i) {
-						for(var j = i+1; j <= balls.length - 1; j++) {
-							var b2 = balls[j];
-							b1.interactWith(b2, dt);
-						}
-						//b1.forces.gravity = new Vector(0, 200).times(b1.getMass());
-						b1.update(dt);
-						b1.bounceOffWalls(width, height);
-					});
-					snakes[0].update(dt);
-					snakes[1].update(dt);
-
-
-					//draw all the things
-					ctx.globalCompositeOperation = "lighter";
-					balls.forEach(function(ball) {
-						ball.drawTo(ctx);
-					});
-					snakes[0].drawTo(ctx);
-					snakes[1].drawTo(ctx);
-					*/
 
 					//prepare for next frame
 					lastt = t;

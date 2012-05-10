@@ -28,6 +28,14 @@ Array.prototype.forEveryPair = function(callback, thisPtr) {
 		}
 	}
 };
+Object.forEach = function(obj, f, thisPtr) {
+	for(i in obj) {
+		var oi = obj[i];
+		if(oi !== undefined) {
+			f.call(thisPtr, oi, i, obj);
+		}
+	}
+}
 Object.forEachPair = function(obj, f, thisPtr) {
 	for(i in obj) {
 		for(j in obj) {

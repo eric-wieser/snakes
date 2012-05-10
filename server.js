@@ -66,7 +66,8 @@ io.sockets.on('connection', function (socket) {
 	socket.on('playercontrol', function (target) {
 		if(name) {
 			target = Vector.ify(target);
-			snake.target = target;
+			if(target)
+				snake.target = target;
 		}
 	});
 
@@ -122,19 +123,22 @@ var randomInt = function(min, max) {
 
 var snakes = [];
 
-//Generate the gray balls
-for(var i = 0; i <= 50; i++) {
-	var r = Math.random();
-	var color, radius;
+var generateBalls = function(n) {
+	//Generate the gray balls
+	for(var i = 0; i <= n; i++) {
+		var r = Math.random();
+		var color, radius;
 
-	if     (r < 0.33) color = new Color(192, 192, 192), radius = randomInt(5,  10);
-	else if(r < 0.66) color = new Color(128, 128, 128), radius = randomInt(10, 20);
-	else              color = new Color( 64,  64,  64), radius = randomInt(20, 40);
+		if     (r < 0.33) color = new Color(192, 192, 192), radius = randomInt(5,  10);
+		else if(r < 0.66) color = new Color(128, 128, 128), radius = randomInt(10, 20);
+		else              color = new Color( 64,  64,  64), radius = randomInt(20, 40);
 
-	universe.addEntity(
-		new Ball(universe.randomPosition(), radius, color)
-	);
+		universe.addEntity(
+			new Ball(universe.randomPosition(), radius, color)
+		);
+	}
 }
+generateBalls(50);
 
 var lastt = +Date.now();
 var i;
@@ -145,17 +149,17 @@ i = setInterval(function() {
 	var t = +Date.now();
 	var dt = (t - lastt) / 1000.0;
 	
-	//box.forces.resistance = box.velocity.times(100*-box.velocity.magnitude());
-	for(p in players) {
-		var player = players[p];
+	Object.forEach(players, function(player) {
 		if(player.target) {
 			var displacement = player.target.minus(player.head.position);
 			var distance = displacement.length;
 			var force = Math.min(distance*5, 400)*player.head.mass;
 
-			player.head.forces.player = distance > 1 ? displacement.timesEquals(force / distance) : Vector.zero;
+			player.head.forces.player = distance > 1 ?
+				displacement.timesEquals(force / distance) :
+				Vector.zero;
 		}
-	}
+	});
 	universe.update(dt);
 	snakes.forEach(function(s) {
 		s.update(dt);
@@ -168,8 +172,12 @@ i = setInterval(function() {
 var stdin = process.openStdin();
 stdin.resume();
 stdin.on('data', function(chunk) {
-	if(/players/.test(chunk)) {
+	if(/^\s*players/.test(chunk)) {
 		console.log(Object.keys(players).join(', '));
+	} else if(/^\s*mass/.test(chunk)) {
+		console.log('Total mass of the universe: '+universe.totalMass());
+	} else if(matches = /^\s*balls (\d+)/.exec(chunk)) {
+		generateBalls(+matches[1]);
 	} else {
 		console.log("sending message");
 		io.sockets.emit('servermessage', "> "+chunk);
