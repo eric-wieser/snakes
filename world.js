@@ -36,3 +36,6 @@ World.prototype.entityById = function(id) {
 		if(e._id == id) return e;
 	}
 }
+World.prototype.totalMass = function(id) {
+	return this.entities.reduce(function(sum, e) { return e.mass + sum; }, 0);
+}

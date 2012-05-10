@@ -102,10 +102,10 @@ for(var i = 0; i <= 50; i++) {
 if(location.search == '?4') {
 	snakes[0] = new Snake(10, new Color(255, 128, 0), new Vector(  universe.width/3,   universe.height / 3));
 	snakes[0].controls = keycodes.wasd
-	snakes[1] = new Snake(10, new Color(255, 64, 64), new Vector(2*universe.width/3,   universe.height / 3));
-	snakes[1].controls = keycodes.arrows
-	snakes[2] = new Snake(10, new Color(0, 128, 255), new Vector(  universe.width/3, 2*universe.height / 3));
-	snakes[2].controls = keycodes.numpad
+	snakes[1] = new Snake(10, new Color(0, 128, 255), new Vector(  universe.width/3, 2*universe.height / 3));
+	snakes[1].controls = keycodes.numpad
+	snakes[2] = new Snake(10, new Color(255, 64, 64), new Vector(2*universe.width/3,   universe.height / 3));
+	snakes[2].controls = keycodes.arrows
 	snakes[3] = new Snake(10, new Color(64, 64, 255), new Vector(2*universe.width/3, 2*universe.height / 3));
 	snakes[3].controls = keycodes.hjkl
 }
@@ -189,12 +189,35 @@ $(window).keydown(function(e) {
 })
 
 //Show the scores
-var scores = $('.scores').children();
+var scoreValues = $('.scores').children();
+var scoreBarElems = $('.score-bar').children();
 setInterval(function() {
+	var mass = universe.totalMass();
+	var mostLeft = 0;
+	var mostRight = 0;
 	snakes.forEach(function(s, i) {
-		var elem = scores.eq(i);
-		elem
-			.text(Math.round(s.mass / 500))
+		var m = s.mass;
+		scoreValues.eq(i)
+			.text(Math.round(m / 500))
 			.css('color', s.color.toString());
+		var bar = scoreBarElems.eq(i);
+		if(i%2 == 0) {
+			bar.css({
+				backgroundColor: s.color.toString()
+			}).stop().animate({
+				width: (100 * m / mass) + '%',
+				left: (100 * mostLeft / mass) + '%'
+			})
+			mostLeft += m;
+		}
+		else {
+			bar.css({
+				backgroundColor: s.color.toString()
+			}).stop().animate({
+				width: (100 * m / mass) + '%',
+				right: (100 * mostRight / mass) + '%'
+			})
+			mostRight += m;
+		}
 	});
 }, 250);
