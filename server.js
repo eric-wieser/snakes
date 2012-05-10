@@ -105,7 +105,7 @@ updateClients = function() {
 		entityUpdate.radius = e.radius;
 		if(e.ownerSnake && e.ownerSnake.name) {
 			entityUpdate.playername = e.ownerSnake.name;
-			entityUpdate.headid = e.ownerSnake.head._id;
+			if(e == e.ownerSnake.head) entityUpdate.head = true;
 		}
 
 		data[e._id] = entityUpdate;
