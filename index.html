@@ -87,13 +87,48 @@
 				right: 68
 			};
 
-			var universe = new World(1000, 800);
+			var universe = new World(2000, 2000);
 
 			
 
 			var socket = io.connect('http://42nd.org:8090');
 			var name;
 			var head;
+			var viewOrigin = Vector.zero;
+			function updateTranslation() {
+				var border = 10;
+				var x = head.position.x - width / 2;
+				var y = head.position.y - height / 2;
+
+				if(x < -border)
+					x = -border;
+				else if(x > border + universe.width - width)
+					x = border + universe.width - width;
+
+				if(y < -border)
+					y = -border;
+				else if(y > border + universe.height - height)
+					y = border + universe.height - height;
+				// if(universe.width < width)
+				// 	x = (universe.width - width) / 2;
+				// else if(head.position.x + width / 2 > universe.width)
+				// 	x = universe.width - width;
+				// else if(head.position.x - width / 2 < 0)
+				// 	x = 0;
+				// else
+				// 	x = head.position.x - width / 2;
+
+				// if(universe.height < height)
+				// 	y = (universe.height - height) / 2;
+				// else if(head.position.y + height / 2 > universe.height)
+				// 	y = universe.height - height;
+				// else if(head.position.y - height / 2 < 0)
+				// 	y = 0;
+				// else
+				// 	y;
+
+				viewOrigin = new Vector(x, y);
+			}
 			(function joinTheGame() {
 				var n = prompt('name?');
 				socket.emit('join', n, function(data) {
@@ -148,15 +183,12 @@
 					});
 					var snake = data.s[name];
 					head = universe.entities[snake[0]];
+					socket.emit('playercontrol', target.plus(viewOrigin));
 				});
 
 				var target = new Vector();
 				$(document).mousemove(function(e) {
-					var offset = $(canvas).offset();
-					var x = e.pageX - offset.left - width / 2;
-					var y = e.pageY - offset.top - height / 2;
-					target.set(head.position.x + x, head.position.y + y);
-					socket.emit('playercontrol', target);
+					target.set(e.pageX, e.pageY);
 				});
 
 				var lastt = Date.now();
@@ -166,7 +198,8 @@
 					ctx.clearRect(0, 0, width, height);
 					ctx.save();
 					if(head) {
-						ctx.translate(width/2 -head.position.x, height / 2 - head.position.y);
+						updateTranslation();
+						ctx.translate(-viewOrigin.x, -viewOrigin.y);
 						ctx.globalCompositeOperation = "source-over";
 						ctx.fillStyle = "black";
 						ctx.fillRect(0, 0, 2000, 2000);
