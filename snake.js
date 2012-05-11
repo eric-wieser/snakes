@@ -115,9 +115,9 @@ Snake.prototype.eat = function(ball) {
 	return true;
 }
 Snake.prototype.destroy = function() {
-	for(var ball in this.balls) {
-		this.world.removeEntity(balls);
-	}
+	this.balls.forEach(function(b) {
+		this.world.removeEntity(b);
+	}, this);
 }
 var balls = [];
 Snake.prototype.update = function(dt) {

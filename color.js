@@ -54,6 +54,17 @@ Color.clipComponent = function(x) {
 Color.ify = function(data) {
 	return new Color(data.r, data.g, data.b);
 }
+Color.randomHue = function() {
+	var a = Math.random() * 3;
+	var b = Math.random() * 256;
+
+	if(a < 1)
+		return new Color(255, b, 256 - b);
+	else if(a < 2)
+		return new Color(256 - b, 255, b);
+	else
+		return new Color(b, 256 - b, 255);
+}
 
 //Primaries
 Color.red     = function() { return new Color(255, 0, 0); }

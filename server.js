@@ -15,7 +15,7 @@ require('./player');
 
 
 var app = express.createServer();
-app.listen(8090);
+app.listen(+process.argv[2] || 8090);
 app.use(express.static(__dirname, {maxAge: 60000}));
 app.use(express.errorHandler());
 app.get('/', function (req, res) {
@@ -29,17 +29,21 @@ io = socketio.listen(app);
 io.set('log level', 2);
 io.sockets.on('connection', function (socket) {
 	Player.listenFor(socket, function playerJoined() {
-		if(Object.keys(players).length == 1)
+		console.log("Player "+this.name+" joined");
+		if(Object.keys(players).length == 1) {
 			generateBalls(50);
-		console.log("Player joined", this);
+			console.log("Balls placed");
+		}
 
 		players[this.name] = this;
 
 		this.onQuit.stuff = function() {
 			delete players[this.name];
+			console.log("Player "+this.name+" quit");
 			//Clear the world if the player is last to leave
 			if(Object.isEmpty(players)) {
 				universe.clear();
+				console.log("Universe cleared");
 			}
 		}
 	});

@@ -48,6 +48,16 @@
 				text-align: right;
 				padding-right: 0.5em;
 			}
+			.score-bar {
+				position: absolute;
+				width: 100%;
+				height: 10px;
+				background: #808080;
+			}
+			.score-bar div {
+				position: absolute;
+				height: 10px;
+			}
 		</style>
 
 		<title>Test</title>
@@ -55,6 +65,12 @@
 	<body>
 		<div id="message"></div>
 		<ul id="scores"></ul>
+		<div class="score-bar">
+			<div></div>
+			<div></div>
+			<div></div>
+			<div></div>
+		</div>
 		<canvas id="canvas" style="width:100%; height: 100%; display: block;">Wat</canvas>
 		<script>
 			window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame  || window.oRequestAnimationFrame || function(callback) {
@@ -97,7 +113,7 @@
 			var heads;
 			var viewOrigin = Vector.zero;
 			function updateTranslation() {
-				var border = 10;
+				var border = 20;
 				var x = head.position.x - width / 2;
 				var y = head.position.y - height / 2;
 
@@ -150,13 +166,42 @@
 				$('#message').text(str);
 			});
 			socket.on('scores', function (scores) {
-				var s = $('#scores').empty();
-				scores.forEach(function(score) {
+				//Get the DOM elements
+				var scoreList = $('#scores').empty();
+				var scoreBar = $('.score-bar').empty();
+
+				//Keep track of left and rightmost bars
+				var mostLeft = 0;
+				var mostRight = 0;
+
+				scores.forEach(function(score, i) {
+					score = { name: score[0], value: score[1], color: score[2] };
+					//Add names to scoreboard
 					$('<li />').append(
-						$('<span class="name"/>').text(score[0]), " ", 
-						$('<span />').text(score[1])
-					).css('color', score[2]).appendTo(s);
-				})
+						$('<span class="name"/>').text(score.name), " ", 
+						$('<span />').text(score.value)
+					).css('color', score.color).appendTo(scoreList);
+
+					//Pad out the bar, alternating sides
+					if(i%2 == 0) {
+						//left
+						$('<div />').css({
+							backgroundColor: score.color,
+							width: (score.value / 10) + '%',
+							left:  (mostLeft    / 10) + '%'
+						}).appendTo(scoreBar);
+						mostLeft += score.value;
+					}
+					else {
+						//right
+						$('<div />').css({
+							backgroundColor: score.color,
+							width: (score.value / 10) + '%',
+							right: (mostRight   / 10) + '%'
+						}).appendTo(scoreBar);
+						mostRight += score.value;
+					}
+				});
 			});
 			function startPlaying() {
 				socket.on('entityupdates', function (data) {

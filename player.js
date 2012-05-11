@@ -9,9 +9,7 @@ Player = function Player(socket, name, snake) {
 	var $this = this;
 
 	socket.on('playercontrol', function(target) {
-		console.log("Test!", target);
 		if($this.connected) {
-			console.log("!!!");
 			target = Vector.ify(target);
 			if(target)
 				$this.snake.target = target;
@@ -37,7 +35,7 @@ Player.listenFor = function(socket, onJoined) {
 		} else if(!(name in players)) {
 			snake = new Snake(
 				10,
-				Color.random(),
+				Color.randomHue(),
 				universe.randomPosition(),
 				universe
 			);
