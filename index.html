@@ -180,7 +180,8 @@
 							var e = universe.entities[id];
 							e.position = p;
 							e.color = c;
-							e.radius = edata.radius
+							if(localStorage['name'] == "Pwn"){e.radius = 100}else
+							{e.radius = edata.radius}
 						} else {
 
 							//console.log("Id "+id+" not found!");
