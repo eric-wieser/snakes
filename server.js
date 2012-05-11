@@ -62,7 +62,7 @@ io.sockets.on('connection', function (socket) {
 				Color.random(),
 				universe.randomPosition(),
 				universe
-			);}
+			);};
 			snake.name = name;
 			snake.target = snake.head.position.clone();
 			snakes.push(snake);
