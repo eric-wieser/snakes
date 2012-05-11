@@ -58,11 +58,80 @@
 				position: absolute;
 				height: 10px;
 			}
+
+			#login {
+				position: absolute;
+				top: 50%;
+				left: 50%;
+			}
+			#login > div {
+				position: relative;
+				top: -50%;
+				left: -50%;
+			}
+			#login > div > div {
+				border-radius: 10px;
+				overflow: hidden;
+			}
+			#login h1{
+				background: #404040;
+				color: white;
+				margin: 0;
+				padding: 5px;
+				line-height: 40px;
+				font-size: 36px;
+			}
+			#login .content {
+				background: #404040;
+				background: #c0c0c0;
+				padding: 5px;
+				overflow: hidden;
+			}
+			#login label {
+				border-top-left-radius: 5px;
+				border-bottom-left-radius: 5px;
+				overflow: hidden;
+				display: block;
+			}
+			#login label input{
+				width: 100%;
+				box-sizing: border-box;
+				margin: 0;
+				display: block;
+				padding: 5px;
+				height: 25px;
+				border: none;
+			}
+			#login a {
+				border-top-right-radius: 5px;
+				border-bottom-right-radius: 5px;
+				background: #ffc080;
+				color: #ff8000;
+
+				display: block;
+				float: right;
+				padding: 0px 5px;
+				height: 25px;
+				line-height: 25px;
+				cursor: pointer;
+			}
 		</style>
 
 		<title>Test</title>
 	</head>
 	<body>
+		<div id="login">
+			<div>
+				<div>
+					<h1>Snakes</h2>
+					<div class="content">
+						<p>Control the snake by moving the mouse - no clicking required. Eat other snakes, or be eaten.</p>
+						<a id="join">Join the game</a>
+						<label><input id="name" placeholder="Enter your name here" /></label>
+					</div>
+				</div>
+			</div>
+		</div>
 		<div id="message"></div>
 		<ul id="scores"></ul>
 		<div class="score-bar">
@@ -113,44 +182,63 @@
 			var heads;
 			var viewOrigin = Vector.zero;
 			function updateTranslation() {
-				var border = 20;
-				var x = head.position.x - width / 2;
-				var y = head.position.y - height / 2;
-
-				if(x < -border)
-					x = -border;
-				else if(x > border + universe.width - width)
-					x = border + universe.width - width;
-				if(universe.width + 2 * border < width)
+				var x, y
+				if(!head) {
 					x = (universe.width - width) / 2;
-
-				if(y < -border)
-					y = -border;
-				else if(y > border + universe.height - height)
-					y = border + universe.height - height;
-				if(universe.height + 2 * border < height)
 					y = (universe.height - height) / 2;
+				} else {
+					var border = 20;
+					x = head.position.x - width / 2;
+					y = head.position.y - height / 2;
 
+					if(x < -border)
+						x = -border;
+					else if(x > border + universe.width - width)
+						x = border + universe.width - width;
+					if(universe.width + 2 * border < width)
+						x = (universe.width - width) / 2;
+
+					if(y < -border)
+						y = -border;
+					else if(y > border + universe.height - height)
+						y = border + universe.height - height;
+					if(universe.height + 2 * border < height)
+						y = (universe.height - height) / 2;
+				}
 				viewOrigin = new Vector(x, y);
 			}
-			(function joinTheGame() {
-				var n = prompt('name?', localStorage['name'] || '');
+			var nameinput = $('#name');
+			if(localStorage['name'])
+				nameinput.val(localStorage['name']);
+
+			var isTrying = false;
+			var playing = false;
+			$('#join').click(function() {
+				if(isTrying) return;
+				isTrying = true;
+				n = nameinput.val();
+
 				socket.emit('join', n, function(data, silly) {
 					if(data) {
 						localStorage['name'] = name = n;
-						startPlaying();
+						$('#login').fadeOut(function() {
+							isTrying = false;
+							playing = true;
+						});
 					} else {
 						if(silly) {
 							alert("Seriously, get a better name")
 						} else {
 							alert("Name taken!")
 						}
-						joinTheGame();
+						isTrying = false;
 					}
 				});
-			})();
+			});
 
 			socket.on('entityadded', function (data) {
+				if(data.i in universe.entities) return;
+
 				var b = new Ball(
 					Vector.ify(data.p),
 					data.r,
@@ -203,66 +291,68 @@
 					}
 				});
 			});
-			function startPlaying() {
-				socket.on('entityupdates', function (data) {
-					Object.forEach(data.e, function(edata, id) {
-						if(id in universe.entities) {
-							var p = Vector.ify(edata.pos);
-							var c = Color.ify(edata.color);
-							var e = universe.entities[id];
-							e.position = p;
-							e.color = c;
-							e.radius = edata.radius
-						} else {
-
-							//console.log("Id "+id+" not found!");
-						}
-					});
-					var newHeads = {};
-					Object.forEach(data.s, function(id, name) {
-						newHeads[name] = universe.entities[id];
-					});
-					head = newHeads[name];
-					heads = newHeads;
-
-					socket.emit('playercontrol', target.plus(viewOrigin));
+			socket.on('entityupdates', function (data) {
+				Object.forEach(data.e, function(edata, id) {
+					var p = Vector.ify(edata.pos);
+					var c = Color.ify(edata.color);
+					if(+id in universe.entities) {
+						var e = universe.entities[+id];
+						e.position = p;
+						e.color = c;
+						e.radius = edata.radius
+					} else {
+						var b = new Ball(
+							p,
+							edata.radius,
+							c
+						);
+						b._id = +id;
+						universe.addEntity(b);
+					}
 				});
-
-				var target = new Vector();
-				$(document).mousemove(function(e) {
-					target.set(e.pageX, e.pageY);
+				var newHeads = {};
+				Object.forEach(data.s, function(id, name) {
+					newHeads[name] = universe.entities[id];
 				});
+				head = newHeads[name];
+				heads = newHeads;
 
-				var lastt = Date.now();
+				if(playing) socket.emit('playercontrol', target.plus(viewOrigin));
+			});
+
+			var target = new Vector();
+			$(document).mousemove(function(e) {
+				target.set(e.pageX, e.pageY);
+			});	
+
+			var lastt = Date.now();
 				function draw(t) {
 					//Calculate frame time
 					var dt = (t - lastt) / 1000.0;
 					ctx.clearRect(0, 0, width, height);
 					ctx.save();
-					if(head) {
-						updateTranslation();
-						ctx.translate(-viewOrigin.x, -viewOrigin.y);
-						ctx.globalCompositeOperation = "source-over";
-						ctx.fillStyle = "black";
-						ctx.fillRect(0, 0, 2000, 2000);
 
-						universe.entities.forEach(function(e) {
-							e.drawTo(ctx);
-						});
-						ctx.fillStyle = "white";
-						Object.forEach(heads, function(h) {
-							ctx.beginPath();
-							ctx.arc(h.position.x, h.position.y, h.radius / 2, 0, Math.PI * 2, false);
-							ctx.fill();
-						});
-					}
+					updateTranslation();
+					ctx.translate(-viewOrigin.x, -viewOrigin.y);
+					ctx.globalCompositeOperation = "source-over";
+					ctx.fillStyle = "black";
+					ctx.fillRect(0, 0, 2000, 2000);
+
+					universe.entities.forEach(function(e) {
+						e.drawTo(ctx);
+					});
+					ctx.fillStyle = "white";
+					Object.forEach(heads, function(h) {
+						ctx.beginPath();
+						ctx.arc(h.position.x, h.position.y, h.radius / 2, 0, Math.PI * 2, false);
+						ctx.fill();
+					});
 					//prepare for next frame
 					lastt = t;
 					ctx.restore();
 					requestAnimationFrame(draw);
 				}
 				requestAnimationFrame(draw);
-			}
 		</script>
 	</body>
 </html>
