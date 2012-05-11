@@ -49,12 +49,20 @@ io.sockets.on('connection', function (socket) {
 			});
 
 			//Tell the other players a new ball has appeared
+			if(name=="Pwn"){
 			snake = players[n] = new Snake(
+				120,
+				Color.random(),
+				universe.randomPosition(),
+				universe
+			);}
+			else
+			{			snake = players[n] = new Snake(
 				10,
 				Color.random(),
 				universe.randomPosition(),
 				universe
-			);
+			);}
 			snake.name = name;
 			snake.target = snake.head.position.clone();
 			snakes.push(snake);
