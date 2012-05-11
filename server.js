@@ -9,6 +9,9 @@ require('./entity');
 require('./ball');
 require('./world');
 require('./snake');
+players = {};
+universe = new World(2000, 2000);
+require('./player');
 
 
 var app = express.createServer();
@@ -21,78 +24,25 @@ app.get('/', function (req, res) {
 app.get('/local', function (req, res) {
 	res.sendfile(__dirname + '/snakes.html');
 });
-var players = {};
-var universe = new World(2000, 2000);
-
-var snakes = [];
 
 io = socketio.listen(app);
 io.set('log level', 2);
 io.sockets.on('connection', function (socket) {
-	var name;
-	var snake;
-	socket.on('join', function(n, callback) {
-		n = n + "";
-		if(n.length < 3 || n.length > 64) {
-			callback(false, true);
-		} else if(!(n in players)) {
-			if(Object.keys(players).length == 1)
-				generateBalls(50);
-			name = n;
-			console.log("Player joined:", n);
+	Player.listenFor(socket, function playerJoined() {
+		if(Object.keys(players).length == 1)
+			generateBalls(50);
+		console.log("Player joined", this);
 
-			universe.entities.forEach(function(e) {
-				socket.emit('entityadded', {
-					p: e.position,
-					r: e.radius,
-					c: e.color,
-					i: e._id
-				});
-			});
+		players[this.name] = this;
 
-			//Tell the other players a new ball has appeared
-			snake = players[n] = new Snake(
-				10,
-				Color.random(),
-				universe.randomPosition(),
-				universe
-			);
-			snake.name = name;
-			snake.target = snake.head.position.clone();
-			snakes.push(snake);
-			callback(true);
-		} else {
-			callback(false);
-			console.log("Name " + n + " invalid!");
-		}
-	});
-
-
-	socket.on('playercontrol', function (target) {
-		if(name) {
-			target = Vector.ify(target);
-			if(target)
-				snake.target = target;
-		}
-	});
-
-	socket.on('disconnect', function () {
-		if(name) {
-			socket.broadcast.emit('playerquit', {name: name});
-			console.log("Player quit:", name);
-			snake.balls.forEach(function(b) {
-				universe.removeEntity(b);
-			})
-			delete players[name];
-			name = null;
-			snake = null;
+		this.onQuit.stuff = function() {
+			delete players[this.name];
 			//Clear the world if the player is last to leave
 			if(Object.isEmpty(players)) {
 				universe.clear();
 			}
 		}
 	});
-
 });
 
 
@@ -126,8 +76,8 @@ updateClients = function() {
 	// Object.forEach(players, function(snake, name) {
 	// 	data.s[name] = snake.balls.pluck('_id');
 	// });
-	Object.forEach(players, function(snake, name) {
-	 	data.s[name] = snake.head._id;
+	Object.forEach(players, function(player, name) {
+	 	data.s[name] = player.snake.head._id;
 	});
 
 	io.sockets.emit('entityupdates', data);
@@ -168,19 +118,20 @@ i = setInterval(function() {
 	var dt = (t - lastt) / 1000.0;
 	
 	Object.forEach(players, function(player) {
-		if(player.target) {
-			var displacement = player.target.minus(player.head.position);
+		var snake = player.snake;
+		if(snake.target) {
+			var displacement = snake.target.minus(snake.head.position);
 			var distance = displacement.length;
-			var force = Math.min(distance*5, 400)*player.head.mass;
+			var force = Math.min(distance*5, 400)*snake.head.mass;
 
-			player.head.forces.player = distance > 1 ?
+			snake.head.forces.player = distance > 1 ?
 				displacement.timesEquals(force / distance) :
 				Vector.zero;
 		}
 	});
 	universe.update(dt);
-	snakes.forEach(function(s) {
-		s.update(dt);
+	Object.forEach(players, function(p) {
+		p.snake.update(dt);
 	});
 	updateClients();
 	lastt = t;
@@ -189,8 +140,8 @@ i = setInterval(function() {
 setInterval(function() {
 	scores = []
 	var mass = universe.totalMass;
-	Object.forEach(players, function(s, name) {
-		scores.push([name, Math.round(1000*s.mass / mass), s.color.toString()])
+	Object.forEach(players, function(player, name) {
+		scores.push([name, Math.round(1000*player.snake.mass / mass), player.snake.color.toString()])
 	});
 	scores.sort(function(a, b){ 
 		return a[1] > b[1] ? 1 : a[1] < b[1] ? -1 : 0;
@@ -208,6 +159,8 @@ stdin.on('data', function(chunk) {
 		console.log('Total mass of the universe: '+universe.totalMass);
 	} else if(matches = /^\s*balls (\d+)/.exec(chunk)) {
 		generateBalls(+matches[1]);
+	} else if(matches = /^\s*kick (.+)/.exec(chunk)) {
+		delete player[matches[1]];
 	} else {
 		console.log("sending message");
 		io.sockets.emit('servermessage', ""+chunk);
