@@ -33,9 +33,11 @@ io.sockets.on('connection', function (socket) {
 	var snake;
 	socket.on('join', function(n, callback) {
 		n = n + "";
-		if(n.length < 3) {
+		if(n.length < 3 || n.length > 64) {
 			callback(false, true);
 		} else if(!(n in players)) {
+			if(Object.keys(players).length == 1)
+				generateBalls(50);
 			name = n;
 			console.log("Player joined:", n);
 
@@ -84,6 +86,10 @@ io.sockets.on('connection', function (socket) {
 			delete players[name];
 			name = null;
 			snake = null;
+			//Clear the world if the player is last to leave
+			if(Object.isEmpty(players)) {
+				universe.clear();
+			}
 		}
 	});
 
@@ -151,7 +157,6 @@ var generateBalls = function(n) {
 		);
 	}
 }
-generateBalls(50);
 
 var lastt = +Date.now();
 var i;
@@ -179,7 +184,7 @@ i = setInterval(function() {
 	});
 	updateClients();
 	lastt = t;
-}, 1000 / 60.0);
+}, 1000 / 30.0);
 
 setInterval(function() {
 	scores = []

@@ -105,28 +105,15 @@
 					x = -border;
 				else if(x > border + universe.width - width)
 					x = border + universe.width - width;
+				if(universe.width + 2 * border < width)
+					x = (universe.width - width) / 2;
 
 				if(y < -border)
 					y = -border;
 				else if(y > border + universe.height - height)
 					y = border + universe.height - height;
-				// if(universe.width < width)
-				// 	x = (universe.width - width) / 2;
-				// else if(head.position.x + width / 2 > universe.width)
-				// 	x = universe.width - width;
-				// else if(head.position.x - width / 2 < 0)
-				// 	x = 0;
-				// else
-				// 	x = head.position.x - width / 2;
-
-				// if(universe.height < height)
-				// 	y = (universe.height - height) / 2;
-				// else if(head.position.y + height / 2 > universe.height)
-				// 	y = universe.height - height;
-				// else if(head.position.y - height / 2 < 0)
-				// 	y = 0;
-				// else
-				// 	y;
+				if(universe.height + 2 * border < height)
+					y = (universe.height - height) / 2;
 
 				viewOrigin = new Vector(x, y);
 			}

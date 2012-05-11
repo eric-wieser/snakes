@@ -18,6 +18,9 @@ World.prototype = {
 		this.onUpdated();
 		return this;
 	},
+	clear: function(e) {
+		this.entities = [];
+	},
 	addEntity: function(e) {
 		this.entities[e._id] = e;
 		this.onEntityAdded(e);
