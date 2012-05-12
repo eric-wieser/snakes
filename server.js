@@ -55,7 +55,7 @@ universe.onEntityAdded.updateClients = function(e) {
 	io.sockets.emit('entityadded', {
 		p: e.position,
 		r: e.radius,
-		c: e.color,
+		c: e.color.toInt(),
 		i: e._id
 	});
 }
@@ -66,7 +66,7 @@ updateClients = function() {
 	universe.entities.forEach(function(e) {
 		var entityUpdate = {};
 		entityUpdate.pos = e.position;
-		entityUpdate.color = e.color;
+		entityUpdate.color = e.color.toInt();
 		entityUpdate.radius = e.radius;
 		if(e.ownerSnake && e.ownerSnake.name) {
 			entityUpdate.playername = e.ownerSnake.name;
@@ -162,7 +162,8 @@ stdin.on('data', function(chunk) {
 	} else if(matches = /^\s*balls (\d+)/.exec(chunk)) {
 		generateBalls(+matches[1]);
 	} else if(matches = /^\s*kick (.+)/.exec(chunk)) {
-		delete player[matches[1]];
+		var player = players[matches[1]]
+		player && player.disconnect();
 	} else {
 		console.log("sending message");
 		io.sockets.emit('servermessage', ""+chunk);

@@ -40,6 +40,18 @@ Color.prototype.randomized = function(x)       { return this.clone().randomize(x
 Color.prototype.toString = function() {
 	return 'rgb(' + Math.round(this.r) + ', ' + Math.round(this.g) + ', ' + Math.round(this.b) + ')';
 };
+Color.prototype.toHexString = function() {
+	return '#' + this.toInt().toString(16);
+};
+Color.prototype.toInt = function(rgb) {
+	return Math.round(this.r) << 16 | Math.round(this.g) << 8 | Math.round(this.b);
+}
+Color.fromInt = function(rgb) {
+	var b = rgb & 0xff;
+	var g = (rgb >>= 8) & 0xff;
+	var r = (rgb >>= 8) & 0xff;
+	return new Color(r, g, b);
+}
 Color.prototype.clone = function() {
 	var c = new Color;
 	c.r = this.r, c.b = this.b, c.g = this.g
@@ -52,7 +64,10 @@ Color.clipComponent = function(x) {
 	return x > 255 ? 255 : x < 0 ? 0 : x;
 }
 Color.ify = function(data) {
-	return new Color(data.r, data.g, data.b);
+	if(typeof data == "number")
+		return Color.fromInt(data);
+	else if(data instanceof Object)
+		return new Color(data.r, data.g, data.b);
 }
 Color.randomHue = function() {
 	var a = Math.random() * 3;
