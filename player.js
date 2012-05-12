@@ -16,40 +16,43 @@ Player = function Player(socket, name, snake) {
 		}
 	});
 
-	socket.on('disconnect', function () {
-		if($this.connected) {
-			$this.onQuit();
-			$this.connected = false;
-			snake.destroy()
-			name = null;
-			snake = null;
-		}
-	});
+	socket.on('disconnect', this.disconnect.bind(this));
 }
-Player.listenFor = function(socket, onJoined) {
-	socket.on('join', function(name, callback) {
-		name = name.replace(/^\s+|\s+$/, '');
-		if(name.length < 3 || name.length > 64) {
-			//Name is of a stupid length
-			callback(false, true);
-		} else if(!(name in players)) {
-			snake = new Snake(
-				10,
-				Color.randomHue(),
-				universe.randomPosition(),
-				universe
-			);
-			snake.name = name;
-			snake.target = snake.head.position.clone();
-			onJoined.call(new Player(socket, name, snake));
+Player.prototype.disconnect = function() {
+	if(this.connected) {
+		this.onQuit();
+		this.connected = false;
+		this.snake.destroy()
+		this.name = null;
+		this.snake = null;
+	}
+}
+Player.listener = function(onJoined) {
+	return function(socket) {
+		socket.on('join', function(name, callback) {
+			name = name.replace(/^\s+|\s+$/, '');
+			if(name.length < 3 || name.length > 64) {
+				//Name is of a stupid length
+				callback(false, true);
+			} else if(!(name in players)) {
+				snake = new Snake(
+					10,
+					Color.randomHue(),
+					universe.randomPosition(),
+					universe
+				);
+				snake.name = name;
+				snake.target = snake.head.position.clone();
+				onJoined.call(new Player(socket, name, snake));
 
-			callback(true);
-		} else {
-			//Name already taken
-			callback(false);
-			console.log("Name " + name + " invalid!");
-		}
-	});
+				callback(true);
+			} else {
+				//Name already taken
+				callback(false);
+				console.log("Name " + name + " invalid!");
+			}
+		});
+	}
 }
 
 Player.prototype.resendAllEntities = function() {

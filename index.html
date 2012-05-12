@@ -8,11 +8,18 @@
 		<script src="color.js"></script>
 		<script src="ball.js"></script>
 		<script src="world.js"></script>
-		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Terminal+Dosis+Light|Ubuntu:300|Ubuntu:300italic" />
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Dosis:300,700" />
+		<meta property="og:title" content="Snakes - a game written in Javascript and HTML5 canvas"/>
+		<meta property="og:type" content="website"/>
+		<meta property="og:url" content="http://42nd.org:8090/"/>
+		<meta property="og:description" content="A game for two (or more) players. Control the snakes with the arrow keys and WASD. Eat or be eaten!"/>
+		<meta property="og:image" content="http://eric-wieser.tk/images/snaps/snakes.png" />
+		<meta property="fb:admins" content="eric.wieser"/>
 		<style>
 			html, body {
 				background: #202020; width: 100%; height: 100%; margin: 0; padding: 0;
-				font-family: 'Terminal Dosis Light', Arial, sans-serif;
+				font-family: 'Dosis', Arial, sans-serif;
+				font-weight:300;
 			}
 			#message {
 				color: white;
@@ -44,7 +51,7 @@
 				width: 50%;
 			}
 			#scores li span.name {
-				font-weight: bold;
+				font-weight: 700;
 				text-align: right;
 				padding-right: 0.5em;
 			}
