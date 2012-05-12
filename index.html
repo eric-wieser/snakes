@@ -8,7 +8,7 @@
 		<script src="color.js"></script>
 		<script src="ball.js"></script>
 		<script src="world.js"></script>
-		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Dosis:300,600" />
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Dosis:300,600|Ubuntu" />
 		<meta property="og:title" content="Snakes - a game written in Javascript and HTML5 canvas"/>
 		<meta property="og:type" content="website"/>
 		<meta property="og:url" content="http://42nd.org:8090/"/>
@@ -65,23 +65,29 @@
 				position: absolute;
 				height: 10px;
 			}
-
-			#login {
+			.vertical-center {
 				position: absolute;
-				top: 50%;
-				left: 50%;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				display: table;
 			}
-			#login > div {
-				position: relative;
+			.vertical-center > div{
+				/*position: relative;
 				top: -50%;
-				left: -50%;
+				left: -50%;*/
+				display: table-cell;
+				vertical-align: middle;
 			}
-			#login .box {
-				border-top: 5px solid;
-				border-bottom: 5px solid;
-				box-shadow: 0 0 25px #404040;
+			.vertical-center > div > div{
+				/*position: relative;
+				top: -50%;
+				left: -50%;*/
+				margin: auto;
 			}
-			#login h1{
+
+			h1{
 				background: #404040;
 				color: white;
 				margin: 0;
@@ -89,14 +95,33 @@
 				line-height: 40px;
 				font-size: 36px;
 			}
-			#login .content {
-				background: #404040;
-				background: #c0c0c0;
+			h2 {
+				color: #ff8000;
+				line-height: 30px;
+				font-size: 24px;
 				padding: 5px;
-				overflow: hidden;
-			}
-			#login .content p {
 				margin: 0;
+			}
+			p {
+				margin: 0;
+				padding: 5px;
+				font-family: Ubuntu;
+			}
+			a {
+				color: #ff8000;
+				border-bottom: 1px dotted #ff8000;
+				text-decoration: none;
+			}
+			.box {
+				border-top: 5px solid;
+				border-bottom: 5px solid;
+				/*box-shadow: 0 0 25px #404040;*/
+				overflow: hidden;
+				background: rgba(64, 64, 64, 0.5);
+				color: white;
+			}
+			#login {
+				width: 400px;
 			}
 			#login input{
 				width: 100%;
@@ -111,18 +136,22 @@
 				border: none;
 				text-align: center;
    				outline: none;
+   				background-color: transparent;
 			}
 			#login button {
 				display: none;
+			}
+			#about {
+				width: 80%;
 			}
 		</style>
 
 		<title>Snakes - A multiplayer game written in javascript using the HTML5 canvas, node.js, and Socket.IO</title>
 	</head>
 	<body>
-		<div id="login">
+		<div class="vertical-center">
 			<div>
-				<div class="box">
+				<div id="login" class="box">
 					<h1>Snakes</h2>
 					<div class="content">
 						<p>Control the snake by moving the mouse - no clicking required. Eat other snakes, or be eaten.</p>
@@ -131,6 +160,21 @@
 						<button type="submit">Join the game</button>
 						<input id="name" placeholder="Enter your name here" autocomplete="off"/>
 					</form>
+				</div>
+			</div>
+		</div>
+		<div class="vertical-center" style="display: none">
+			<div>
+				<div id="about" class="box">
+					<h1>About Snakes</h1>
+					<p>Snakes started off as a simple physics engine, with just balls bouncing off each other and the edges of the screen. Then the concept of "polarity" was added to the balls, and a form of magnetic attraction was simulated. Interestingly, the balls naturally formed into wriggling work shapes. A couple more tweaks, and a set of balls followed the player. It began to become apparent that there was a potential for a game here. Add a second player, a scoring system, and the ability to eat other balls, and you have a single computer, keyboard-mashing game. You can still play a <a href="/local">2 player</a>, <a href="/local?3">3 player</a>, or even <a href="/local?4">4 player</a> version of the single-computer version.</p>
+
+					<h2>Networking</h2>
+					<p>Snakes needed improving. The controls were terrible, the arena too small, and most keyboards couldn't cope with the strain of 4 users each hammering arrow keys. It needed to go networked. Node.js was the answer, along with Socket.IO. This was an exercise in learning new technologies, and seeing where they led to. </p>
+
+					<h2>Created by <a href="http://eric-wieser.tk/">Eric Wieser</a></h2>
+					<p>With thanks to Max Sinclair for allowing a core of his webserver to be devoted to Snakes, Luke Suess for game inspiration along the way, and numerous friends for playing, testing, and hacking the game so that I could improve it.</p>
+					<p>The inspiration to go networked came from Rob Hawkes' <a href="http://rawkets.com">Rawkets</a></p>
 				</div>
 			</div>
 		</div>
@@ -145,11 +189,16 @@
 		<canvas id="canvas" style="width:100%; height: 100%; display: block;">Wat</canvas>
 		<script>
 			var color = Color.randomHue();
-			$('#login .box').css({
+			$('.box').css({
 				borderTopColor: color.toString(),
 				borderBottomColor: color.toString(),
 			});
-
+			$('a').css({
+				borderBottomColor: color.toString(),
+			});
+			$('#login input, h2, a').css({
+				color: color.toString()
+			});
 			window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame  || window.oRequestAnimationFrame || function(callback) {
 					window.setTimeout(function() {callback(Date.now())}, 1000 / 60.0);
 				};
