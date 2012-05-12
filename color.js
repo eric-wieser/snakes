@@ -70,15 +70,21 @@ Color.ify = function(data) {
 		return new Color(data.r, data.g, data.b);
 }
 Color.randomHue = function() {
-	var a = Math.random() * 3;
-	var b = Math.random() * 256;
+	var a = Math.random() * 6;
+	var b = Math.random() * 128 - 64;
 
 	if(a < 1)
-		return new Color(255, b, 256 - b);
+		return new Color(255, 64 + b, 64 - b); //yellow-magenta face
 	else if(a < 2)
-		return new Color(256 - b, 255, b);
+		return new Color(64 - b, 255, 64 + b); //magenta-cyan face
+	else if(a < 3)
+		return new Color(64 + b, 64 - b, 255); //cyan-yellow face
+	else if(a < 4)
+		return new Color(0, 192 + b, 192 - b); //green-blue face
+	else if(a < 5)
+		return new Color(192 - b, 0, 192 + b); //blue-red face
 	else
-		return new Color(b, 256 - b, 255);
+		return new Color(192 + b, 192 - b, 0); //red-green face
 }
 
 //Primaries

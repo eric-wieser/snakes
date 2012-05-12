@@ -342,6 +342,7 @@
 					ctx.fillStyle = "black";
 					ctx.fillRect(0, 0, 2000, 2000);
 
+					ctx.globalCompositeOperation = "lighter";
 					universe.entities.forEach(function(e) {
 						e.drawTo(ctx);
 					});
