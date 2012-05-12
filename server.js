@@ -53,7 +53,7 @@ universe.onEntityRemoved.updateClients = function(e) {
 }
 universe.onEntityAdded.updateClients = function(e) {
 	io.sockets.emit('entityadded', {
-		p: e.position,
+		p: e.position.toFixed(2),
 		r: e.radius,
 		c: e.color.toInt(),
 		i: e._id
@@ -65,12 +65,12 @@ updateClients = function() {
 	data.s = {};
 	universe.entities.forEach(function(e) {
 		var entityUpdate = {};
-		entityUpdate.pos = e.position;
-		entityUpdate.color = e.color.toInt();
-		entityUpdate.radius = e.radius;
+		entityUpdate.p = e.position.toFixed(2);
+		entityUpdate.c = e.color.toInt();
+		entityUpdate.r = e.radius;
 		if(e.ownerSnake && e.ownerSnake.name) {
-			entityUpdate.playername = e.ownerSnake.name;
-			if(e == e.ownerSnake.head) entityUpdate.head = true;
+			entityUpdate.n = e.ownerSnake.name;
+			if(e == e.ownerSnake.head) entityUpdate.h = true;
 		}
 
 		data.e[e._id] = entityUpdate;

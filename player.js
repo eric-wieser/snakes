@@ -59,9 +59,9 @@ Player.prototype.resendAllEntities = function() {
 	var p = this;
 	universe.entities.forEach(function(e) {
 		p.socket.emit('entityadded', {
-			p: e.position,
+			p: e.position.toFixed(2),
 			r: e.radius,
-			c: e.color,
+			c: e.color.toInt(),
 			i: e._id
 		});
 	});

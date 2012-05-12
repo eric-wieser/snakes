@@ -20,6 +20,9 @@ Vector.fromString = function(string) {
 Vector.ify = function(data) {
 	if(data instanceof Object && 'x' in data && 'y' in data)
 		return new Vector(data.x, data.y);
+	else if(typeof data == "string") {
+		return Vector.fromString(data);
+	}
 }
 Vector.prototype = {
 	set: function(x, y) {
@@ -132,6 +135,9 @@ Vector.prototype = {
 	},
 	toString: function() {
 		return '(' + this.x + ',' + this.y + ')';
+	},
+	toFixed: function(precision) {
+		return '(' + this.x.toFixed(precision) + ',' + this.y.toFixed(precision) + ')';
 	},
 	clone: function() {
 		return new Vector(this.x, this.y);

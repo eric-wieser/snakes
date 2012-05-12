@@ -300,19 +300,16 @@
 			});
 			socket.on('entityupdates', function (data) {
 				Object.forEach(data.e, function(edata, id) {
-					var p = Vector.ify(edata.pos);
-					var c = Color.ify(edata.color);
+					var p = Vector.ify(edata.p);
+					var c = Color.ify(edata.c);
+					var r = edata.r;
 					if(+id in universe.entities) {
 						var e = universe.entities[+id];
 						e.position = p;
 						e.color = c;
-						e.radius = edata.radius
+						e.radius = r;
 					} else {
-						var b = new Ball(
-							p,
-							edata.radius,
-							c
-						);
+						var b = new Ball(p,	r, c);
 						b._id = +id;
 						universe.addEntity(b);
 					}
