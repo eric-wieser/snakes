@@ -29,15 +29,15 @@ Player.prototype.disconnect = function() {
 }
 Player.listener = function(onJoined) {
 	return function(socket) {
-		socket.on('join', function(name, callback) {
-			name = name.replace(/^\s+|\s+$/, '');
+		socket.on('join', function(data, callback) {
+			var name = data.name.replace(/^\s+|\s+$/, '');
 			if(name.length < 3 || name.length > 64) {
 				//Name is of a stupid length
 				callback(false, true);
 			} else if(!(name in players)) {
 				snake = new Snake(
 					10,
-					Color.randomHue(),
+					Color.ify(data.color),
 					universe.randomPosition(),
 					universe
 				);

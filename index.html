@@ -24,7 +24,7 @@
 			#message {
 				color: white;
 				position: absolute;
-				top:0;
+				top:10px;
 				left: 0;
 				right: 0;
 				font-size: 30px;
@@ -76,9 +76,10 @@
 				top: -50%;
 				left: -50%;
 			}
-			#login > div > div {
-				border-radius: 10px;
-				overflow: hidden;
+			#login .box {
+				border-top: 5px solid;
+				border-bottom: 5px solid;
+				box-shadow: 0 0 25px #404040;
 			}
 			#login h1{
 				background: #404040;
@@ -94,33 +95,24 @@
 				padding: 5px;
 				overflow: hidden;
 			}
-			#login label {
-				border-top-left-radius: 5px;
-				border-bottom-left-radius: 5px;
-				overflow: hidden;
-				display: block;
+			#login .content p {
+				margin: 0;
 			}
-			#login label input{
+			#login input{
 				width: 100%;
 				box-sizing: border-box;
 				margin: 0;
 				display: block;
-				padding: 5px;
-				height: 25px;
+				padding: 0px;
+				height: 50px;
+				line-height: 50px;
+				font: inherit;
+				font-size: 40px;
 				border: none;
+				text-align: center;
 			}
-			#login a {
-				border-top-right-radius: 5px;
-				border-bottom-right-radius: 5px;
-				background: #ffc080;
-				color: #ff8000;
-
-				display: block;
-				float: right;
-				padding: 0px 5px;
-				height: 25px;
-				line-height: 25px;
-				cursor: pointer;
+			#login button {
+				display: none;
 			}
 		</style>
 
@@ -129,13 +121,15 @@
 	<body>
 		<div id="login">
 			<div>
-				<div>
+				<div class="box">
 					<h1>Snakes</h2>
 					<div class="content">
 						<p>Control the snake by moving the mouse - no clicking required. Eat other snakes, or be eaten.</p>
-						<a id="join">Join the game</a>
-						<label><input id="name" placeholder="Enter your name here" /></label>
 					</div>
+					<form id="join">
+						<button type="submit">Join the game</button>
+						<input id="name" placeholder="Enter your name here" autocomplete="off"/>
+					</form>
 				</div>
 			</div>
 		</div>
@@ -149,6 +143,12 @@
 		</div>
 		<canvas id="canvas" style="width:100%; height: 100%; display: block;">Wat</canvas>
 		<script>
+			var color = Color.randomHue();
+			$('#login .box').css({
+				borderTopColor: color.toHexString(),
+				borderBottomColor: color.toHexString(),
+			});
+
 			window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame  || window.oRequestAnimationFrame || function(callback) {
 					window.setTimeout(function() {callback(Date.now())}, 1000 / 60.0);
 				};
@@ -220,27 +220,30 @@
 
 			var isTrying = false;
 			var playing = false;
-			$('#join').click(function() {
-				if(isTrying) return;
-				isTrying = true;
-				n = nameinput.val();
 
-				socket.emit('join', n, function(data, silly) {
-					if(data) {
-						localStorage['name'] = name = n;
-						$('#login').fadeOut(function() {
-							isTrying = false;
-							playing = true;
-						});
-					} else {
-						if(silly) {
-							alert("Seriously, get a better name")
+			$('#join').submit(function() {
+				if(!isTrying) {
+					isTrying = true;
+					n = nameinput.val();
+
+					socket.emit('join', {name: n, color: color.toInt()}, function(data, silly) {
+						if(data) {
+							localStorage['name'] = name = n;
+							$('#login').fadeOut(function() {
+								isTrying = false;
+								playing = true;
+							});
 						} else {
-							alert("Name taken!")
+							if(silly) {
+								alert("Seriously, get a better name")
+							} else {
+								alert("Name taken!")
+							}
+							isTrying = false;
 						}
-						isTrying = false;
-					}
-				});
+					});
+				}
+				return false;
 			});
 
 			socket.on('entityadded', function (data) {
