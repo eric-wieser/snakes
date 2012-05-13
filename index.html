@@ -11,10 +11,11 @@
 		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Dosis:300,600|Ubuntu" />
 		<meta property="og:title" content="Snakes - a game written in Javascript and HTML5 canvas"/>
 		<meta property="og:type" content="website"/>
-		<meta property="og:url" content="http://42nd.org:8090/"/>
+		<meta property="og:url" content="http://snakes.eric-wieser.tk/"/>
 		<meta property="og:description" content="A game for two (or more) players. Control the snakes with the arrow keys and WASD. Eat or be eaten!"/>
 		<meta property="og:image" content="http://eric-wieser.tk/images/snaps/snakes.png" />
 		<meta property="fb:admins" content="eric.wieser"/>
+		<link rel="shortcut icon" href="/favicon.png">
 		<style>
 			html, body {
 				background: #202020; width: 100%; height: 100%; margin: 0; padding: 0;
@@ -120,7 +121,7 @@
 				background: rgba(64, 64, 64, 0.5);
 				color: white;
 			}
-			#login {
+			#login .box{
 				width: 400px;
 			}
 			#login input{
@@ -141,7 +142,7 @@
 			#login button {
 				display: none;
 			}
-			#about {
+			#about .box{
 				width: 80%;
 			}
 		</style>
@@ -149,13 +150,12 @@
 		<title>Snakes - A multiplayer game written in javascript using the HTML5 canvas, node.js, and Socket.IO</title>
 	</head>
 	<body>
-		<div class="vertical-center">
+		<div id="login" class="vertical-center">
 			<div>
-				<div id="login" class="box">
+				<div class="box">
 					<h1>Snakes</h2>
-					<div class="content">
-						<p>Control the snake by moving the mouse - no clicking required. Eat other snakes, or be eaten.</p>
-					</div>
+					<p>Control the snake by moving the mouse - no clicking required. Eat other snakes, or be eaten.</p>
+					<p><a href="#" id="about-link">About</a></p>
 					<form id="join">
 						<button type="submit">Join the game</button>
 						<input id="name" placeholder="Enter your name here" autocomplete="off"/>
@@ -163,17 +163,17 @@
 				</div>
 			</div>
 		</div>
-		<div class="vertical-center" style="display: none">
+		<div id="about" class="vertical-center" style="display: none">
 			<div>
-				<div id="about" class="box">
+				<div class="box">
 					<h1>About Snakes</h1>
-					<p>Snakes started off as a simple physics engine, with just balls bouncing off each other and the edges of the screen. Then the concept of "polarity" was added to the balls, and a form of magnetic attraction was simulated. Interestingly, the balls naturally formed into wriggling work shapes. A couple more tweaks, and a set of balls followed the player. It began to become apparent that there was a potential for a game here. Add a second player, a scoring system, and the ability to eat other balls, and you have a single computer, keyboard-mashing game. You can still play a <a href="/local">2 player</a>, <a href="/local?3">3 player</a>, or even <a href="/local?4">4 player</a> version of the single-computer version.</p>
+					<p>Snakes started off as a simple physics engine, with just balls bouncing off each other and the edges of the screen. Then a form of magnetic attraction was simulated. Interestingly, the balls naturally formed into wriggling snake shapes. A couple more tweaks, and a set of balls followed the player. It began to become apparent that there was a potential for a game here. Add a second player, a scoring system, and the ability to eat other balls, and you have a single computer, keyboard-mashing game. You can still play a <a href="/local">2 player</a>, <a href="/local?3">3 player</a>, or even <a href="/local?4">4 player</a> version of the single-computer version.</p>
 
 					<h2>Networking</h2>
 					<p>Snakes needed improving. The controls were terrible, the arena too small, and most keyboards couldn't cope with the strain of 4 users each hammering arrow keys. It needed to go networked. Node.js was the answer, along with Socket.IO. This was an exercise in learning new technologies, and seeing where they led to. </p>
 
 					<h2>Created by <a href="http://eric-wieser.tk/">Eric Wieser</a></h2>
-					<p>With thanks to Max Sinclair for allowing a core of his webserver to be devoted to Snakes, Luke Suess for game inspiration along the way, and numerous friends for playing, testing, and hacking the game so that I could improve it.</p>
+					<p>With thanks to Max Sinclair for allowing a core of his webserver to be devoted to Snakes, Luke Suess and Jonathan Laver for game inspiration along the way, and numerous friends for playing, testing, and hacking the game so that I could improve it.</p>
 					<p>The inspiration to go networked came from Rob Hawkes' <a href="http://rawkets.com">Rawkets</a></p>
 				</div>
 			</div>
@@ -199,6 +199,22 @@
 			$('#login input, h2, a').css({
 				color: color.toString()
 			});
+			$('#about .box').click(function(e) {
+				e.stopPropagation();
+			});
+			//Show and hide the about box
+			$('#about-link').click(function() {
+				$('#login').fadeOut(function(){
+					$('#about').fadeIn(function() {
+						$('#about').one('click', function() {
+							$('#about').fadeOut(function(){
+								$('#login').fadeIn();
+							});
+						});
+					});
+				});
+				return false;
+			})
 			window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame  || window.oRequestAnimationFrame || function(callback) {
 					window.setTimeout(function() {callback(Date.now())}, 1000 / 60.0);
 				};
@@ -383,34 +399,34 @@
 			});	
 
 			var lastt = Date.now();
-				function draw(t) {
-					//Calculate frame time
-					var dt = (t - lastt) / 1000.0;
-					ctx.clearRect(0, 0, width, height);
-					ctx.save();
+			function draw(t) {
+				//Calculate frame time
+				var dt = (t - lastt) / 1000.0;
+				ctx.clearRect(0, 0, width, height);
+				ctx.save();
 
-					updateTranslation();
-					ctx.translate(-viewOrigin.x, -viewOrigin.y);
-					ctx.globalCompositeOperation = "source-over";
-					ctx.fillStyle = "black";
-					ctx.fillRect(0, 0, 2000, 2000);
+				updateTranslation();
+				ctx.translate(-viewOrigin.x, -viewOrigin.y);
+				ctx.globalCompositeOperation = "source-over";
+				ctx.fillStyle = "black";
+				ctx.fillRect(0, 0, 2000, 2000);
 
-					ctx.globalCompositeOperation = "lighter";
-					universe.entities.forEach(function(e) {
-						e.drawTo(ctx);
-					});
-					ctx.fillStyle = "white";
-					Object.forEach(heads, function(h) {
-						ctx.beginPath();
-						ctx.arc(h.position.x, h.position.y, h.radius / 2, 0, Math.PI * 2, false);
-						ctx.fill();
-					});
-					//prepare for next frame
-					lastt = t;
-					ctx.restore();
-					requestAnimationFrame(draw);
-				}
+				ctx.globalCompositeOperation = "lighter";
+				universe.entities.forEach(function(e) {
+					e.drawTo(ctx);
+				});
+				ctx.fillStyle = "white";
+				Object.forEach(heads, function(h) {
+					ctx.beginPath();
+					ctx.arc(h.position.x, h.position.y, h.radius / 2, 0, Math.PI * 2, false);
+					ctx.fill();
+				});
+				//prepare for next frame
+				lastt = t;
+				ctx.restore();
 				requestAnimationFrame(draw);
+			}
+			requestAnimationFrame(draw);
 		</script>
 	</body>
 </html>
