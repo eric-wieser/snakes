@@ -10,7 +10,6 @@
 		<link rel="shortcut icon" href="/favicon.png">
 		<script src="/socket.io/socket.io.js"></script>
 		<script src="util.js"></script>
-		<script src="jquery.placeholder.js"></script>
 		<script src="vector.js"></script>
 		<script src="entity.js"></script>
 		<script src="color.js"></script>
@@ -31,31 +30,6 @@
 				right: 0;
 				font-size: 30px;
 				text-align: center;
-			}
-			#scores {
-				position: absolute;
-				bottom: 5px;
-				left: 0;
-				right: 0;
-				font-size: 30px;
-				line-height: 35px;
-				padding: 0;
-				margin: 0;
-				width: 100%;
-				display: table;
-			}
-			#scores li {
-				display: table-row;
-				color: white;
-			}
-			#scores li span {
-				display: table-cell;
-				width: 50%;
-			}
-			#scores li span.name {
-				font-weight: 700;
-				text-align: right;
-				padding-right: 0.5em;
 			}
 			.score-bar {
 				position: absolute;
@@ -108,6 +82,7 @@
 				margin: 0;
 				padding: 5px;
 				font-family: Ubuntu;
+				line-height: 20px;
 			}
 			small {
 				padding: 5px;
@@ -154,6 +129,61 @@
 			#about .box{
 				width: 80%;
 			}
+			#bottom {
+				position: absolute;
+				bottom: 0;
+				left: 0;
+				right: 0;
+			}
+
+			#scores {
+				font-size: 30px;
+				line-height: 35px;
+				padding: 0;
+				margin: 0;
+				width: 100%;
+				display: table;
+			}
+			#scores li {
+				display: table-row;
+				color: white;
+			}
+			#scores li span {
+				display: table-cell;
+				width: 50%;
+			}
+			#scores li span.name {
+				font-weight: 700;
+				text-align: right;
+				padding-right: 0.5em;
+			}
+
+			#chat input{
+				height: 20px;
+				color: white;
+				padding: 0px;
+				margin: 0;
+				border: 0;
+				display: block;
+				width: 100%;
+				box-sizing: border-box;
+				background: transparent;
+			}
+
+			#chat .history {
+				color: white;
+				margin: 0;
+				padding: 0;
+				position: absolute;
+				bottom: 20px;
+			}
+			#chat .history li {
+				color: white;
+				padding: 0;
+				margin: 0;
+				word-wrap: break-word;
+				width: 100%;
+			}
 		</style>
 
 		<title>Snakes - A multiplayer game written in javascript using the HTML5 canvas, node.js, and Socket.IO</title>
@@ -175,8 +205,7 @@
 			<div>
 				<div class="box">
 					<h1>Snakes</h2>
-					<p>Control the snake by moving the mouse - no clicking required. Eat other snakes, or be eaten.</p>
-					<p><a href="#" id="about-link">About</a></p>
+					<p>Control the snake by moving the mouse - no clicking required. Eat other snakes, or be eaten. <a href="#" id="about-link">About</a>.</p>
 					<form id="join">
 						<button type="submit">Join the game</button>
 						<input id="name" placeholder="Enter your name here" autocomplete="off" autofocus="autofocus" />
@@ -201,13 +230,23 @@
 				</div>
 			</div>
 		</div>
-		<div id="message"></div>
-		<ul id="scores"></ul>
-		<div class="score-bar">
-			<div></div>
-			<div></div>
-			<div></div>
-			<div></div>
+		<div id="top">
+			<div id="message"></div>
+			<div class="score-bar">
+				<div></div>
+				<div></div>
+				<div></div>
+				<div></div>
+			</div>
+		</div>
+		<div id="bottom">
+			<ul id="scores"></ul>
+			<form id="chat">
+				<ul class="history">
+				</ul>
+				<input />
+				<button type="submit" style="display: none"></button>
+			</form>
 		</div>
 		<canvas id="canvas" style="width:100%; height: 100%; display: block;">Wat</canvas>
 		<script>
@@ -419,7 +458,34 @@
 			var target = new Vector();
 			$(document).mousemove(function(e) {
 				target.set(e.pageX, e.pageY);
-			});	
+			}).keydown(function() {
+				if(playing) $('#chat input').focus();
+			});
+
+			$('#chat').submit(function() {
+				if(playing) {
+					var input = $(this).find('input');
+					var msg = input.val();
+					input.val('');
+					socket.emit('chat', msg);
+				}
+				return false;
+			});
+
+			socket.on('chat', function (data) {
+				var name = data.n;
+				var color = Color.ify(data.c);
+				var message = data.m;
+				var history = $('#chat .history');
+				//alert(name + ":" + message);
+				$('<li />').append(
+					$('<span />').css('color', color+"").text(name),
+					' '+message
+				).appendTo('#chat .history');
+
+				while(history.children().size() > 10)
+					history.children().first().remove();
+			});
 
 			var lastt = Date.now();
 			function draw(t) {

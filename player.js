@@ -4,6 +4,7 @@ Player = function Player(socket, name, snake) {
 	this.name = name;
 	this.connected = true;
 	Object.defineEvent(this, 'onQuit');
+	Object.defineEvent(this, 'onChat');
 	this.resendAllEntities();
 
 	var $this = this;
@@ -15,6 +16,15 @@ Player = function Player(socket, name, snake) {
 				$this.snake.target = target;
 		}
 	});
+
+	socket.on('chat', function(msg) {
+		msg = msg + "";
+		if(msg.length > 1024)
+			return;
+		var data = {n: $this.name, c: $this.snake.color.toInt(), m: msg};
+		socket.emit('chat', data);
+		socket.broadcast.emit('chat', data);
+	})
 
 	socket.on('disconnect', this.disconnect.bind(this));
 }
