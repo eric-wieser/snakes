@@ -29,6 +29,7 @@ var gameRunning = false;
 
 io = socketio.listen(app);
 io.set('log level', 2);
+io.set('close timeout', 5);
 io.sockets.on('connection', Player.listener(function() {
 	console.log("Player "+this.name+" joined");
 	if(!gameRunning && Object.keys(players).length == 1) {

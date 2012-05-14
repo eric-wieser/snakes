@@ -311,12 +311,13 @@
 
 			
 
+			//var socket = io.connect('http://42nd.org:8090');
 			var socket = io.connect('http://42nd.org:8090');
 			var name;
 			var head;
 			var heads;
 			var viewOrigin = Vector.zero;
-			function updateTranslation() {
+			function nextViewOrigin() {
 				var x, y
 				if(!head) {
 					x = (universe.width - width) / 2;
@@ -340,7 +341,7 @@
 					if(universe.height + 2 * border < height)
 						y = (universe.height - height) / 2;
 				}
-				viewOrigin = new Vector(x, y);
+				return new Vector(x, y);
 			}
 			var nameinput = $('#name');
 			if(localStorage['name'])
@@ -374,20 +375,20 @@
 				return false;
 			});
 
-			socket.on('entityadded', function (data) {
-				if(data.i in universe.entities) return;
+			// socket.on('entityadded', function (data) {
+			// 	if(data.i in universe.entities) return;
 
-				var b = new Ball(
-					Vector.ify(data.p),
-					data.r,
-					Color.ify(data.c)
-				);
-				b._id = data.i; //probably going to regret this
-				universe.addEntity(b);
-			});
-			socket.on('entitylost', function (id) {
-				delete universe.entities[id];
-			});
+			// 	var b = new Ball(
+			// 		Vector.ify(data.p),
+			// 		data.r,
+			// 		Color.ify(data.c)
+			// 	);
+			// 	b._id = data.i; //probably going to regret this
+			// 	universe.addEntity(b);
+			// });
+			// socket.on('entitylost', function (id) {
+			// 	delete universe.entities[id];
+			// });
 			socket.on('servermessage', function (str) {
 				$('#message').html(str);
 			});
@@ -442,9 +443,13 @@
 					} else {
 						var b = new Ball(p,	r, c);
 						b._id = +id;
-						universe.addEntity(b);
+						universe.entities[+id] = b;
 					}
 				});
+				for(id in universe.entities)
+					if(!(id in data.e))
+						delete universe.entities[id];
+
 				var newHeads = {};
 				Object.forEach(data.s, function(id, name) {
 					newHeads[name] = universe.entities[id];
@@ -454,7 +459,9 @@
 
 				if(playing) socket.emit('playercontrol', target.plus(viewOrigin));
 			});
-
+			$(window).on('beforeunload', function() {
+			    socket.emit('disconnect');
+			});
 			var target = new Vector();
 			$(document).mousemove(function(e) {
 				target.set(e.pageX, e.pageY);
@@ -493,8 +500,8 @@
 				var dt = (t - lastt) / 1000.0;
 				ctx.clearRect(0, 0, width, height);
 				ctx.save();
+				viewOrigin = nextViewOrigin();
 
-				updateTranslation();
 				ctx.translate(-viewOrigin.x, -viewOrigin.y);
 				ctx.globalCompositeOperation = "source-over";
 				ctx.fillStyle = "black";

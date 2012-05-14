@@ -1,6 +1,7 @@
 Player = function Player(socket, name, snake) {
 	this.socket = socket;
 	this.snake = snake;
+	this.color = this.snake.color;
 	this.name = name;
 	this.connected = true;
 	Object.defineEvent(this, 'onQuit');
@@ -21,32 +22,37 @@ Player = function Player(socket, name, snake) {
 		msg = msg + "";
 		if(msg.length > 1024)
 			return;
-		var data = {n: $this.name, c: $this.snake.color.toInt(), m: msg};
+		var data = {n: $this.name, c: $this.color.toInt(), m: msg};
 		socket.emit('chat', data);
 		socket.broadcast.emit('chat', data);
 	})
 
-	socket.on('disconnect', this.disconnect.bind(this));
+	socket.on('disconnect', function() {
+		$this.disconnect()
+	});
 }
 Player.prototype.disconnect = function() {
 	if(this.connected) {
 		this.onQuit();
 		this.connected = false;
-		this.snake.destroy()
+		this.snake.destroy();
 		this.name = null;
 		this.snake = null;
 	}
 }
 Player.listener = function(onJoined) {
 	return function(socket) {
+		var gotResponse = false;
 		socket.on('join', function(data, callback) {
+			if(gotResponse) return;
+
 			var name = data.name;
 			if(typeof name != "string") return;
 
 			name = name.replace(/^\s+|\s+$/, '');
 			if(name.length < 3 || name.length > 64) {
 				//Name is of a stupid length
-				callback(false, true);
+				callback({error: "Name length invalid"});
 			} else if(!(name in players)) {
 				snake = new Snake(
 					10,
@@ -56,13 +62,14 @@ Player.listener = function(onJoined) {
 				);
 				snake.name = name;
 				snake.target = snake.head.position.clone();
+				gotResponse = true;
 				onJoined.call(new Player(socket, name, snake));
 
 				callback(true);
 			} else {
 				//Name already taken
-				callback(false);
-				console.log("Name " + name + " invalid!");
+				callback({error: "Someone else has that name"});
+				console.log();
 			}
 		});
 	}
