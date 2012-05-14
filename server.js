@@ -25,13 +25,16 @@ app.get('/local', function (req, res) {
 	res.sendfile(__dirname + '/snakes.html');
 });
 
+var gameRunning = false;
+
 io = socketio.listen(app);
 io.set('log level', 2);
 io.sockets.on('connection', Player.listener(function() {
 	console.log("Player "+this.name+" joined");
-	if(Object.keys(players).length == 1) {
+	if(!gameRunning && Object.keys(players).length == 1) {
 		generateBalls(50);
 		console.log("Balls placed");
+		gameRunning = true;
 	}
 
 	players[this.name] = this;
@@ -41,6 +44,7 @@ io.sockets.on('connection', Player.listener(function() {
 		console.log("Player "+this.name+" quit");
 		//Clear the world if the player is last to leave
 		if(Object.isEmpty(players)) {
+			gameRunning = false;
 			universe.clear();
 			console.log("Universe cleared");
 		}
