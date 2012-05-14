@@ -3,11 +3,8 @@ Entity = function Entity(position, velocity) {
 	this.position = position || Vector.zero;
 	this.velocity = velocity || Vector.zero;
 	this.forces = {};
-	this._id = Entity.generateIdNo();
+	this._id = -1;
 };
-Entity.generateIdNo = (function(id) {
-	return function() {	return id++; }
-})(0);
 
 Object.defineProperty(Entity.prototype, 'id', {
 	get: function() { return 'e' + this._id; }

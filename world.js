@@ -22,7 +22,12 @@ World.prototype = {
 		this.entities = [];
 	},
 	addEntity: function(e) {
-		this.entities[e._id] = e;
+		var i = 0;
+		while(this.entities[i] !== undefined)
+			i++;
+		e._id = i;
+
+		this.entities[i] = e;
 		this.onEntityAdded(e);
 		return this;
 	},
