@@ -1,17 +1,19 @@
-Player = function Player(socket, name, snake) {
+Player = function Player(socket, name, color) {
 	this.socket = socket;
-	this.snake = snake;
-	this.color = this.snake.color;
+	this.color = color;
 	this.name = name;
 	this.connected = true;
 	Object.defineEvent(this, 'onQuit');
+	Object.defineEvent(this, 'onDeath');
 	Object.defineEvent(this, 'onChat');
 	this.resendAllEntities();
+	
 
 	var $this = this;
 
+
 	socket.on('playercontrol', function(target) {
-		if($this.connected) {
+		if($this.snake) {
 			target = Vector.ify(target);
 			if(target)
 				$this.snake.target = target;
@@ -25,14 +27,23 @@ Player = function Player(socket, name, snake) {
 	socket.on('disconnect', function() {
 		$this.disconnect();
 	});
+
+	this.spawnSnake();
 }
 Player.prototype.disconnect = function() {
 	if(this.connected) {
 		this.onQuit();
 		this.connected = false;
-		this.snake.destroy();
 		this.name = null;
+		if(this.snake) this.snake.destroy();
 		this.snake = null;
+	}
+}
+Player.prototype.kill = function() {
+	if(this.connected && this.snake) {
+		this.snake.destroy();
+		this.snake = null;
+		this.onDeath("console");
 	}
 }
 Player.prototype.chat = function(msg) {
@@ -54,6 +65,23 @@ Player.prototype.resendAllEntities = function() {
 	});
 }
 
+Player.prototype.spawnSnake = function() {
+	var $this = this;
+	var snake = new Snake(
+		10,
+		this.color,
+		universe.randomPosition(),
+		universe
+	);
+	snake.owner = this;
+	snake.target = snake.head.position.clone();
+	snake.onDeath.playerDeath = function(killer) {
+		$this.snake = null;
+		$this.onDeath("enemy", killer.owner)
+	};
+	this.snake = snake;
+}
+
 //returns a function that listens to a socket, and calls onJoined when a player joins
 Player.listener = function(onJoined) {
 	return function(socket) {
@@ -68,17 +96,8 @@ Player.listener = function(onJoined) {
 			if(name.length < 3 || name.length > 64) {
 				callback({error: "Name length invalid"});
 			} else if(!(name in players)) {
-				snake = new Snake(
-					10,
-					Color.ify(data.color),
-					universe.randomPosition(),
-					universe
-				);
-				snake.name = name;
-				snake.target = snake.head.position.clone();
 				gotResponse = true;
-				onJoined.call(new Player(socket, name, snake));
-
+				onJoined.call(new Player(socket, name, Color.ify(data.color)));
 				callback(true);
 			} else {
 				//Name already taken

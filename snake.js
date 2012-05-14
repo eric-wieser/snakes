@@ -11,6 +11,7 @@ Snake = function Snake(length, color, pos, world) {
 	this.balls.forEach(function(b) {
 		this.world.addEntity(b);
 	}, this);
+	Object.defineEvent(this, 'onDeath');
 }
 var onHeadHit = function(thing) {
 	var that = thing.ownerSnake;
@@ -20,8 +21,16 @@ var onHeadHit = function(thing) {
 			return false; //prevent balls interacting
 		}
 	}
-	else if(that != this && thing != that.head) {
-		if(this.canEat(thing)) {
+	else if(that != this) {
+		if(thing == that.head) {
+			if(that.length == 1 && this.head.mass > that.head.mass*2) {
+				this.eat(thing);
+				that.balls = [];
+				that.onDeath(this);
+				return false;
+			}
+		}
+		else if(this.canEat(thing)) {
 			that.eatenAt(thing);
 			this.eat(thing);
 			//console.log(this.color +' hit '+that.color);
@@ -118,39 +127,41 @@ Snake.prototype.destroy = function() {
 	this.balls.forEach(function(b) {
 		this.world.removeEntity(b);
 	}, this);
+	this.balls = [];
 }
 var balls = [];
 Snake.prototype.update = function(dt) {
-
-	//Shortening
-	this.balls.forAdjacentPairs(function(a, b, ai, bi) {
-		var rate = 50;// + 5*(this.length - ai);
-		var aMass = a.mass;
-		var diff = aMass - this.maxMass;
-		if(diff > rate) {
-			a.mass = aMass - rate;
-			b.mass += rate;
-		} else if(diff < -rate) {
-			a.mass = aMass + rate;
-			b.mass -= rate;
-		} else {
-			a.mass = this.maxMass;
-			b.mass += diff;
+	if(true || this.balls) {
+		//Shortening
+		this.balls.forAdjacentPairs(function(a, b, ai, bi) {
+			var rate = 50;// + 5*(this.length - ai);
+			var aMass = a.mass;
+			var diff = aMass - this.maxMass;
+			if(diff > rate) {
+				a.mass = aMass - rate;
+				b.mass += rate;
+			} else if(diff < -rate) {
+				a.mass = aMass + rate;
+				b.mass -= rate;
+			} else {
+				a.mass = this.maxMass;
+				b.mass += diff;
+			}
+		}, this);
+		var last = this.tail;
+		if(!(last.mass > 0)) { //NaNs
+			this.balls.pop();
+			this.world.removeEntity(last);
 		}
-	}, this);
-	var last = this.tail;
-	if(!(last.mass > 0)) { //NaNs
-		this.balls.pop();
-		this.world.removeEntity(last);
-	}
-	
-	//Update ball colors
-	this.balls.forEach(function(b) {
-		b.color.lerp(this.color, 0.05);
-	}, this);
+		
+		//Update ball colors
+		this.balls.forEach(function(b) {
+			b.color.lerp(this.color, 0.05);
+		}, this);
 
-	//Force them into a line
-	this.balls.forAdjacentPairs(function(b1, b2) {
-		b2.follow(b1);
-	}, this);
+		//Force them into a line
+		this.balls.forAdjacentPairs(function(b1, b2) {
+			b2.follow(b1);
+		}, this);
+	}
 };

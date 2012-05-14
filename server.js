@@ -58,6 +58,16 @@ io.sockets.on('connection', Player.listener(function() {
 		this.socket.emit('chat', data);
 		this.socket.broadcast.emit('chat', data);
 		console.log(this.name.yellow + ": ".grey + msg)
+	};
+
+	this.onDeath.stuff = function(type, killer) {
+		if(type == "enemy") {
+			console.log(this.name.yellow + " was killed by " + killer.name.yellow);
+			var data = {n: "", c: new Color(192, 192, 192).toInt(), m: "Killed by "+ killer.name};
+			this.socket.emit('chat', data);
+		}
+		else if(type == "console")
+			console.log(this.name.yellow + " eliminated");
 	}
 }));
 
@@ -82,8 +92,8 @@ updateClients = function() {
 		entityUpdate.p = e.position.toFixed(2);
 		entityUpdate.c = e.color.toInt();
 		entityUpdate.r = e.radius;
-		if(e.ownerSnake && e.ownerSnake.name) {
-			entityUpdate.n = e.ownerSnake.name;
+		if(e.ownerSnake && e.ownerSnake.owner) {
+			entityUpdate.n = e.ownerSnake.owner.name;
 			if(e == e.ownerSnake.head) entityUpdate.h = true;
 		}
 
@@ -93,7 +103,7 @@ updateClients = function() {
 	// 	data.s[name] = snake.balls.pluck('_id');
 	// });
 	Object.forEach(players, function(player, name) {
-	 	data.s[name] = player.snake.head._id;
+	 	player.snake && (data.s[name] = player.snake.head._id);
 	});
 
 	io.sockets.emit('entityupdates', data);
@@ -135,7 +145,7 @@ i = setInterval(function() {
 	
 	Object.forEach(players, function(player) {
 		var snake = player.snake;
-		if(snake.target) {
+		if(snake && snake.target) {
 			var displacement = snake.target.minus(snake.head.position);
 			var distance = displacement.length;
 			var force = Math.min(distance*5, 400)*snake.head.mass;
@@ -147,7 +157,8 @@ i = setInterval(function() {
 	});
 	universe.update(dt);
 	Object.forEach(players, function(p) {
-		p.snake.update(dt);
+		try {p.snake && p.snake.update(dt); }
+		catch(e) { console.log("O shit", e, p); }
 	});
 	updateClients();
 	lastt = t;
@@ -157,7 +168,7 @@ setInterval(function() {
 	scores = []
 	var mass = universe.totalMass;
 	Object.forEach(players, function(player, name) {
-		scores.push([name, Math.round(1000*player.snake.mass / mass), player.snake.color.toString()])
+		player.snake && scores.push([name, Math.round(1000*player.snake.mass / mass), player.snake.color.toString()])
 	});
 	scores.sort(function(a, b){ 
 		return a[1] > b[1] ? 1 : a[1] < b[1] ? -1 : 0;
@@ -181,6 +192,9 @@ cli.on('line', function(line) {
 	} else if(matches = /^\s*kick (.+)/.exec(line)) {
 		var player = players[matches[1]]
 		player && player.disconnect();
+	} else if(matches = /^\s*kill (.+)/.exec(line)) {
+		var player = players[matches[1]]
+		player && player.kill();
 	} else {
 		console.log("sending message");
 		io.sockets.emit('servermessage', ""+line);
