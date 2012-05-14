@@ -1,21 +1,22 @@
 <!doctype html>
-<html>
+<html xmlns:og="http://opengraphprotocol.org/schema/">
 	<head>
-		<script src="/socket.io/socket.io.js"></script>
-		<script src="util.js"></script>
-		<script src="vector.js"></script>
-		<script src="entity.js"></script>
-		<script src="color.js"></script>
-		<script src="ball.js"></script>
-		<script src="world.js"></script>
-		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Dosis:300,600|Ubuntu" />
-		<meta property="og:title" content="Snakes - a game written in Javascript and HTML5 canvas"/>
+		<meta property="og:title" content="Snakes - A multiplayer game written in javascript using the HTML5 canvas, node.js, and Socket.IO"/>
 		<meta property="og:type" content="website"/>
 		<meta property="og:url" content="http://snakes.eric-wieser.tk/"/>
 		<meta property="og:description" content="A game for two (or more) players. Control the snakes with the arrow keys and WASD. Eat or be eaten!"/>
 		<meta property="og:image" content="http://eric-wieser.tk/images/snaps/snakes.png" />
 		<meta property="fb:admins" content="eric.wieser"/>
 		<link rel="shortcut icon" href="/favicon.png">
+		<script src="/socket.io/socket.io.js"></script>
+		<script src="util.js"></script>
+		<script src="jquery.placeholder.js"></script>
+		<script src="vector.js"></script>
+		<script src="entity.js"></script>
+		<script src="color.js"></script>
+		<script src="ball.js"></script>
+		<script src="world.js"></script>
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Dosis:300,600|Ubuntu" />
 		<style>
 			html, body {
 				background: #202020; width: 100%; height: 100%; margin: 0; padding: 0;
@@ -170,7 +171,7 @@
 					<p><a href="#" id="about-link">About</a></p>
 					<form id="join">
 						<button type="submit">Join the game</button>
-						<input id="name" placeholder="Enter your name here" autocomplete="off"/>
+						<input id="name" placeholder="Enter your name here" autocomplete="off" autofocus="autofocus" />
 					</form>
 				</div>
 			</div>
@@ -340,7 +341,7 @@
 				delete universe.entities[id];
 			});
 			socket.on('servermessage', function (str) {
-				$('#message').text(str);
+				$('#message').html(str);
 			});
 			socket.on('scores', function (scores) {
 				//Get the DOM elements
