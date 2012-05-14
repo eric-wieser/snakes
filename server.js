@@ -1,6 +1,8 @@
 //var process = require('process');
 var express = require('express');
 var socketio = require('socket.io');
+var readline = require('readline');
+var colors = require('colors');
 
 require('./util');
 require('./color');
@@ -49,6 +51,13 @@ io.sockets.on('connection', Player.listener(function() {
 			universe.clear();
 			console.log("Universe cleared");
 		}
+	}
+
+	this.onChat.stuff = function(msg) {	
+		var data = {n: this.name, c: this.color.toInt(), m: msg};
+		this.socket.emit('chat', data);
+		this.socket.broadcast.emit('chat', data);
+		console.log(this.name.yellow + ": ".grey + msg)
 	}
 }));
 
@@ -157,20 +166,28 @@ setInterval(function() {
 }, 500);
 
 
-var stdin = process.openStdin();
-stdin.resume();
-stdin.on('data', function(chunk) {
-	if(/^\s*players/.test(chunk)) {
+var cli = readline.createInterface(process.stdin, process.stdout);
+var prompt = function() {
+	cli.setPrompt("> ".grey, 2);
+	cli.prompt();
+}
+cli.on('line', function(line) {
+	if(/^\s*players/.test(line)) {
 		console.log(Object.keys(players).join(', '));
-	} else if(/^\s*mass/.test(chunk)) {
+	} else if(/^\s*mass/.test(line)) {
 		console.log('Total mass of the universe: '+universe.totalMass);
-	} else if(matches = /^\s*balls (\d+)/.exec(chunk)) {
+	} else if(matches = /^\s*balls (\d+)/.exec(line)) {
 		generateBalls(+matches[1]);
-	} else if(matches = /^\s*kick (.+)/.exec(chunk)) {
+	} else if(matches = /^\s*kick (.+)/.exec(line)) {
 		var player = players[matches[1]]
 		player && player.disconnect();
 	} else {
 		console.log("sending message");
-		io.sockets.emit('servermessage', ""+chunk);
+		io.sockets.emit('servermessage', ""+line);
 	}
+	prompt();
+}).on('close', function() {
+	io.sockets.emit('servermessage', 'Server going down!');
+	process.exit(0);
 });
+prompt();

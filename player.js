@@ -19,16 +19,11 @@ Player = function Player(socket, name, snake) {
 	});
 
 	socket.on('chat', function(msg) {
-		msg = msg + "";
-		if(msg.length > 1024)
-			return;
-		var data = {n: $this.name, c: $this.color.toInt(), m: msg};
-		socket.emit('chat', data);
-		socket.broadcast.emit('chat', data);
-	})
+		$this.chat(msg);
+	});
 
 	socket.on('disconnect', function() {
-		$this.disconnect()
+		$this.disconnect();
 	});
 }
 Player.prototype.disconnect = function() {
@@ -40,6 +35,26 @@ Player.prototype.disconnect = function() {
 		this.snake = null;
 	}
 }
+Player.prototype.chat = function(msg) {
+	msg = (""+msg).trim();
+
+	if(this.connected && msg.length < 1024 && msg.length != 0) {
+		this.onChat(msg);
+	}
+}
+Player.prototype.resendAllEntities = function() {
+	var p = this;
+	universe.entities.forEach(function(e) {
+		p.socket.emit('entityadded', {
+			p: e.position.toFixed(2),
+			r: e.radius,
+			c: e.color.toInt(),
+			i: e._id
+		});
+	});
+}
+
+//returns a function that listens to a socket, and calls onJoined when a player joins
 Player.listener = function(onJoined) {
 	return function(socket) {
 		var gotResponse = false;
@@ -51,7 +66,6 @@ Player.listener = function(onJoined) {
 
 			name = name.replace(/^\s+|\s+$/, '');
 			if(name.length < 3 || name.length > 64) {
-				//Name is of a stupid length
 				callback({error: "Name length invalid"});
 			} else if(!(name in players)) {
 				snake = new Snake(
@@ -73,16 +87,4 @@ Player.listener = function(onJoined) {
 			}
 		});
 	}
-}
-
-Player.prototype.resendAllEntities = function() {
-	var p = this;
-	universe.entities.forEach(function(e) {
-		p.socket.emit('entityadded', {
-			p: e.position.toFixed(2),
-			r: e.radius,
-			c: e.color.toInt(),
-			i: e._id
-		});
-	});
 }
