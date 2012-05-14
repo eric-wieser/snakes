@@ -168,6 +168,7 @@
 				width: 100%;
 				box-sizing: border-box;
 				background: transparent;
+				outline: none;
 			}
 
 			#chat .history {
@@ -183,6 +184,18 @@
 				margin: 0;
 				word-wrap: break-word;
 				width: 100%;
+			}
+			#wrapper {
+				position: absolute;
+				top: 10px;
+				left: 0;
+				right: 0;
+				bottom: 0;
+			}
+			canvas {
+				width: 100%;
+				height: 100%;
+				display: block;
 			}
 		</style>
 
@@ -201,6 +214,25 @@
 		</script>
 	</head>
 	<body>
+		<div id="wrapper"><canvas id="canvas">If you can see this, your browser sucks</canvas></div>
+		<div id="top">
+			<div id="message"></div>
+			<div class="score-bar">
+				<div></div>
+				<div></div>
+				<div></div>
+				<div></div>
+			</div>
+		</div>
+		<div id="bottom">
+			<ul id="scores"></ul>
+			<form id="chat">
+				<ul class="history">
+				</ul>
+				<input />
+				<button type="submit" style="display: none"></button>
+			</form>
+		</div>
 		<div id="login" class="vertical-center">
 			<div>
 				<div class="box">
@@ -230,25 +262,6 @@
 				</div>
 			</div>
 		</div>
-		<div id="top">
-			<div id="message"></div>
-			<div class="score-bar">
-				<div></div>
-				<div></div>
-				<div></div>
-				<div></div>
-			</div>
-		</div>
-		<div id="bottom">
-			<ul id="scores"></ul>
-			<form id="chat">
-				<ul class="history">
-				</ul>
-				<input />
-				<button type="submit" style="display: none"></button>
-			</form>
-		</div>
-		<canvas id="canvas" style="width:100%; height: 100%; display: block;">Wat</canvas>
 		<script>
 			var color = Color.randomHue();
 			$('.box').css({
@@ -351,24 +364,20 @@
 			var playing = false;
 
 			$('#join').submit(function() {
+				//Stop things happening while the response is being waited for
 				if(!isTrying) {
 					isTrying = true;
 					n = nameinput.val();
 
-					socket.emit('join', {name: n, color: color.toInt()}, function(data, silly) {
-						if(data) {
+					socket.emit('join', {name: n, color: color.toInt()}, function(data) {
+						if(data === true) {
 							localStorage['name'] = name = n;
 							$('#login').fadeOut(function() {
 								isTrying = false;
 								playing = true;
 							});
-						} else {
-							if(silly) {
-								alert("Seriously, get a better name")
-							} else {
-								alert("Name taken!")
-							}
-							isTrying = false;
+						} else if(data instanceof Object && data.error) {
+							alert(data.error)
 						}
 					});
 				}
@@ -464,7 +473,8 @@
 			});
 			var target = new Vector();
 			$(document).mousemove(function(e) {
-				target.set(e.pageX, e.pageY);
+				var offset = $(canvas).offset();
+				target.set(e.pageX - offset.left, e.pageY - offset.top);
 			}).keydown(function() {
 				if(playing) $('#chat input').focus();
 			});
@@ -493,7 +503,16 @@
 				while(history.children().size() > 10)
 					history.children().first().remove();
 			});
-
+			function drawArrow(x, y, angle) {
+				ctx.save();
+				ctx.translate(x, y);
+				ctx.rotate(angle);
+				ctx.beginPath();
+				ctx.moveTo(5, 0);
+				ctx.lineTo(20,-7.5);
+				ctx.lineTo(20, 7.5);
+				ctx.restore();
+			}
 			var lastt = Date.now();
 			function draw(t) {
 				//Calculate frame time
@@ -511,11 +530,29 @@
 				universe.entities.forEach(function(e) {
 					e.drawTo(ctx);
 				});
-				ctx.fillStyle = "white";
 				Object.forEach(heads, function(h) {
-					ctx.beginPath();
-					ctx.arc(h.position.x, h.position.y, h.radius / 2, 0, Math.PI * 2, false);
-					ctx.fill();
+					if(h.position.x + h.radius < viewOrigin.x) {
+						drawArrow(viewOrigin.x, h.position.y, 0);
+						ctx.fillStyle = h.color+"";
+						ctx.fill();
+					} else if(h.position.x - h.radius > viewOrigin.x + width) {
+						drawArrow(viewOrigin.x + width, h.position.y, Math.PI);
+						ctx.fillStyle = h.color+"";
+						ctx.fill();
+					} else if(h.position.y + h.radius < viewOrigin.y) {
+						drawArrow(h.position.x, viewOrigin.y,  Math.PI / 2);
+						ctx.fillStyle = h.color+"";
+						ctx.fill();
+					} else if(h.position.y - h.radius > viewOrigin.y + height) {
+						drawArrow(h.position.x, viewOrigin.y + height, 3 * Math.PI / 2);
+						ctx.fillStyle = h.color+"";
+						ctx.fill();
+					} else {
+						ctx.beginPath();
+						ctx.arc(h.position.x, h.position.y, h.radius / 2, 0, Math.PI * 2, false);
+						ctx.fillStyle = "white";
+						ctx.fill();
+					}
 				});
 				//prepare for next frame
 				lastt = t;
