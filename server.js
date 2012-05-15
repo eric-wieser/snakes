@@ -29,6 +29,15 @@ app.get('/local', function (req, res) {
 
 var gameRunning = false;
 
+var killTypes=[
+	'Double',
+	'Multi',
+	'Mega',
+	'Ultra',
+	'Monster',
+	'Ludicrous',
+	'Holy Shit',];
+
 io = socketio.listen(app);
 io.set('log level', 2);
 io.set('close timeout', 5);
@@ -62,13 +71,18 @@ io.sockets.on('connection', Player.listener(function() {
 
 	this.onDeath.stuff = function(type, killer) {
 		if(type == "enemy") {
+			killer.kills++;
 			console.log(this.name.yellow + " was killed by " + killer.name.yellow);
-			// var data = {n: "", c: new Color(192, 192, 192).toInt(), m: "Killed by "+ killer.name};
-			// this.socket.emit('chat', data);
+
+			if (killer.kills > 1 && killer.kills < killer.kills.length) {
+				killMessage = 'got a ' + killTypes[killer.kills - 1] +' kill on'
+			} else {
+				killMessage = 'killed'
+			}
 			io.sockets.emit(
 				'servermessage',
-				'<span style="color:' +killer.color.toString()+'">' +	killer.name + '</span> killed ' + 
-				'<span style="color:' +this.color.toString()+'">' +	this.name + '</span>!');
+				'<span style="color:' + killer.color.toString()+'">' + killer.name + '</span> ' + killMessage + 
+				' <span style="color:' + this.color.toString()+'">' + this.name + '</span>!');
 			killer.snake && (killer.snake.maxMass *= 2);
 		}
 		else if(type == "console")

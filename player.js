@@ -3,6 +3,7 @@ Player = function Player(socket, name, color) {
 	this.color = color;
 	this.name = name;
 	this.connected = true;
+	this.kills = 0;
 	Object.defineEvent(this, 'onQuit');
 	Object.defineEvent(this, 'onDeath');
 	Object.defineEvent(this, 'onChat');
@@ -66,6 +67,7 @@ Player.prototype.resendAllEntities = function() {
 }
 
 Player.prototype.spawnSnake = function() {
+	this.kills = 0;
 	var $this = this;
 	var snake = new Snake(
 		10,
