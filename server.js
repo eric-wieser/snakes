@@ -196,14 +196,45 @@ setInterval(function() {
 }, 500);
 
 
-var cli = readline.createInterface(process.stdin, process.stdout);
-var prompt = function() {
-	cli.setPrompt("> ".grey, 2);
-	cli.prompt();
+var cli = readline.createInterface(
+	process.stdin,
+	process.stdout,
+	function (line) {
+		var playercommands = ['kick', 'kill', 'spawn', 'help'];
+		var commands = ['mass', 'balls'];
+		var allCommands = playercommands.concat(commands)
+
+		for(var i = 0; i < playercommands.length; i++) {
+			var command = playercommands[i]
+			if(line.indexOf(command) == 0) {
+				var name = line.substr(command.length + 1);
+				var completions = [];
+				Object.forEach(players, function(p, n) {
+					if(n.indexOf(name) == 0)
+						completions.push(command + ' ' + n);
+				})
+				return [completions, line];
+			}
+		}
+
+		var hits = allCommands.filter(function(c) {
+			return c.indexOf(line) == 0;
+		});
+		return [hits && hits.length ? hits : completions, line];
+	}
+);
+cli.setPrompt("> ".grey, 2);
+var log = console.log;
+console.log = function() {
+	cli.pause();
+	process.stdout.write('\x1b[2K\r');
+	log.apply(console, Array.prototype.slice.call(arguments));
+	cli.resume();
+	cli._refreshLine();
 }
 cli.on('line', function(line) {
 	if(/^\s*players/.test(line)) {
-		console.log(Object.keys(players).join(', '));
+		console.log(Object.values(players).pluck('coloredName').join(', '));
 	} else if(/^\s*mass/.test(line)) {
 		console.log('Total mass of the universe: '+universe.totalMass);
 	} else if(matches = /^\s*balls (\d+)/.exec(line)) {
@@ -224,9 +255,9 @@ cli.on('line', function(line) {
 		console.log("sending message");
 		io.sockets.emit('servermessage', ""+line);
 	}
-	prompt();
+	cli.prompt();
 }).on('close', function() {
 	io.sockets.emit('servermessage', 'Server going down!');
 	process.exit(0);
 });
-prompt();
+cli.prompt();
