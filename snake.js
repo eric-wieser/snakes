@@ -82,7 +82,6 @@ Snake.prototype.drawTo = function(ctx) {
 	return this;
 };
 Snake.prototype.addBall = function(ball) {
-	this.owner && console.log("Adding ball to "+this.owner.name.yellow);
 	ball.clearForces();
 	ball.velocity.set(0, 0);
 	ball.ownerSnake = this;
@@ -154,8 +153,14 @@ Snake.prototype.update = function(dt) {
 			a.mass = aMass - rate;
 			b.mass += rate;
 		} else if(diff < -rate) {
-			a.mass = aMass + rate;
-			b.mass -= rate;
+			var bMass = b.mass;
+			if(bMass < rate) {
+				b.mass = 0;
+				a.mass = aMass + bMass;
+			} else {
+				a.mass = aMass + rate;
+				b.mass = bMass - rate;
+			}
 		} else {
 			a.mass = this.maxMass;
 			b.mass += diff;
