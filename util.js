@@ -46,6 +46,24 @@ Object.forEach = function(obj, f, thisPtr) {
 		}
 	}
 }
+Object.some = function(obj, f, thisPtr) {
+	for(var i in obj) {
+		var oi = obj[i];
+		if(oi !== undefined && f.call(thisPtr, oi, i, obj) === true) {
+			return true;
+		}
+	}
+	return false;
+}
+Object.every = function(obj, f, thisPtr) {
+	for(var i in obj) {
+		var oi = obj[i];
+		if(oi !== undefined && f.call(thisPtr, oi, i, obj) !== true) {
+			return false;
+		}
+	}
+	return true;
+}
 Object.forEachPair = function(obj, f, thisPtr) {
 	for(var i in obj) {
 		for(var j in obj) {
