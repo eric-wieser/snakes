@@ -33,7 +33,7 @@ io = socketio.listen(app);
 io.set('log level', 2);
 io.set('close timeout', 5);
 io.sockets.on('connection', Player.listener(function() {
-	console.log("Player "+this.name+" joined");
+	console.log("Player ".grey + this.name.yellow + " joined".grey);
 	if(!gameRunning && Object.keys(players).length == 1) {
 		generateBalls(50);
 		console.log("Balls placed");
@@ -44,9 +44,9 @@ io.sockets.on('connection', Player.listener(function() {
 
 	this.onQuit.stuff = function() {
 		delete players[this.name];
-		console.log("Player "+this.name+" quit");
+		console.log("Player ".grey + this.name.yellow + " quit".grey);
 		//Clear the world if the player is last to leave
-		if(Object.isEmpty(players)) {
+		if(Object.every(players, function(p) {return p.snake == null})) {
 			gameRunning = false;
 			universe.clear();
 			console.log("Universe cleared");
@@ -63,8 +63,13 @@ io.sockets.on('connection', Player.listener(function() {
 	this.onDeath.stuff = function(type, killer) {
 		if(type == "enemy") {
 			console.log(this.name.yellow + " was killed by " + killer.name.yellow);
-			var data = {n: "", c: new Color(192, 192, 192).toInt(), m: "Killed by "+ killer.name};
-			this.socket.emit('chat', data);
+			// var data = {n: "", c: new Color(192, 192, 192).toInt(), m: "Killed by "+ killer.name};
+			// this.socket.emit('chat', data);
+			io.sockets.emit(
+				'servermessage',
+				'<span style="color:' +killer.color.toString()+'">' +	killer.name + '</span> killed ' + 
+				'<span style="color:' +this.color.toString()+'">' +	this.name + '</span>!');
+			killer.snake && (killer.snake.maxMass *= 2);
 		}
 		else if(type == "console")
 			console.log(this.name.yellow + " eliminated");
@@ -195,6 +200,9 @@ cli.on('line', function(line) {
 	} else if(matches = /^\s*kill (.+)/.exec(line)) {
 		var player = players[matches[1]]
 		player && player.kill();
+	} else if(matches = /^\s*spawn (.+)/.exec(line)) {
+		var player = players[matches[1]]
+		player && !player.snake && player.spawnSnake();
 	} else {
 		console.log("sending message");
 		io.sockets.emit('servermessage', ""+line);

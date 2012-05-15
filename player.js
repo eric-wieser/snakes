@@ -79,6 +79,9 @@ Player.prototype.spawnSnake = function() {
 		$this.snake = null;
 		$this.onDeath("enemy", killer.owner)
 	};
+	snake.onBallEaten.notify = function(ball, type) {
+		console.log($this.name.yellow +" ate a "+type+" ball");
+	}
 	this.snake = snake;
 }
 
