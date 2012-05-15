@@ -279,15 +279,12 @@
 			});
 			//Show and hide the about box
 			$('#about-link').click(function() {
-				$('#login').fadeOut(function(){
-					$('#about').fadeIn(function() {
-						$('#about').one('click', function() {
-							$('#about').fadeOut(function(){
-								$('#login').fadeIn();
-							});
-						});
-					});
-				});
+				$('#login')
+					.fadeOut()
+					.queue(function(next) { $('#about').fadeIn(next);       })
+					.queue(function(next) { $('#about').one('click', next); })
+					.queue(function(next) { $('#about').fadeOut(next);      })
+					.fadeIn();
 				return false;
 			})
 			window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame  || window.oRequestAnimationFrame || function(callback) {
@@ -467,9 +464,6 @@
 				heads = newHeads;
 
 				if(playing) socket.emit('playercontrol', target.plus(viewOrigin));
-			});
-			$(window).on('beforeunload', function() {
-			    socket.emit('disconnect');
 			});
 			var target = new Vector();
 			$(document).mousemove(function(e) {
