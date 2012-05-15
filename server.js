@@ -29,15 +29,33 @@ app.get('/local', function (req, res) {
 
 var gameRunning = false;
 
+var tryStartGame = function() {
+	if(!gameRunning) {
+		if(Object.keys(players).length >= 1) {
+			generateBalls(50);
+			Object.forEach(players, function(p) {
+				p.spawnSnake();
+			});
+			console.log("Balls placed");
+			gameRunning = true;
+			return true;
+		}
+	}
+	return false;
+}
+
 io = socketio.listen(app);
 io.set('log level', 2);
 io.set('close timeout', 5);
 io.sockets.on('connection', Player.listener(function() {
 	console.log("Player ".grey + this.name.yellow + " joined".grey);
-	if(!gameRunning && Object.keys(players).length == 1) {
-		generateBalls(50);
-		console.log("Balls placed");
-		gameRunning = true;
+
+	if(tryStartGame()) {
+	}
+	else {
+		var totalPlayerMass = Object.reduce(players, function(sum, p) { return sum + (p.snake ? p.snake.mass : 0) }, 0);
+		if(totalPlayerMass <= universe.totalMass / 3)
+			this.spawnSnake();
 	}
 
 	players[this.name] = this;
@@ -49,7 +67,7 @@ io.sockets.on('connection', Player.listener(function() {
 		if(Object.every(players, function(p) {return p.snake == null})) {
 			gameRunning = false;
 			universe.clear();
-			console.log("Universe cleared");
+			tryStartGame();
 		}
 	}
 
@@ -74,6 +92,7 @@ io.sockets.on('connection', Player.listener(function() {
 		else if(type == "console")
 			console.log(this.name.yellow + " eliminated");
 	}
+
 }));
 
 
@@ -203,6 +222,9 @@ cli.on('line', function(line) {
 	} else if(matches = /^\s*spawn (.+)/.exec(line)) {
 		var player = players[matches[1]]
 		player && !player.snake && player.spawnSnake();
+	} else if(matches = /^\s*help (.+)/.exec(line)) {
+		var player = players[matches[1]]
+		player && player.snake && player.snake.maxMass *= 2;
 	} else {
 		console.log("sending message");
 		io.sockets.emit('servermessage', ""+line);

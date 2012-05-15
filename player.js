@@ -27,8 +27,6 @@ Player = function Player(socket, name, color) {
 	socket.on('disconnect', function() {
 		$this.disconnect();
 	});
-
-	this.spawnSnake();
 }
 Player.prototype.disconnect = function() {
 	if(this.connected) {
