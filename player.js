@@ -1,11 +1,12 @@
+var util = require("util");
+var events = require("events");
+
 Player = function Player(socket, name, color) {
+    events.EventEmitter.call(this);
 	this.socket = socket;
 	this.color = color;
 	this.name = name;
 	this.connected = true;
-	Object.defineEvent(this, 'onQuit');
-	Object.defineEvent(this, 'onDeath');
-	Object.defineEvent(this, 'onChat');
 	this.resendAllEntities();
 	
 
@@ -28,9 +29,16 @@ Player = function Player(socket, name, color) {
 		$this.disconnect();
 	});
 }
+
+util.inherits(Player, events.EventEmitter);
+Object.defineProperty(Player.prototype, 'coloredName', {
+	get: function() {
+		return this.name.colored(this.color);
+	}
+})
 Player.prototype.disconnect = function() {
 	if(this.connected) {
-		this.onQuit();
+		this.emit('quit');
 		this.connected = false;
 		this.name = null;
 		if(this.snake) this.snake.destroy();
@@ -41,14 +49,14 @@ Player.prototype.kill = function() {
 	if(this.connected && this.snake) {
 		this.snake.destroy();
 		this.snake = null;
-		this.onDeath("console");
+		this.emit('death', 'console');
 	}
 }
 Player.prototype.chat = function(msg) {
 	msg = (""+msg).trim();
 
 	if(this.connected && msg.length < 1024 && msg.length != 0) {
-		this.onChat(msg);
+		this.emit('chat', msg);
 	}
 }
 Player.prototype.resendAllEntities = function() {
@@ -75,10 +83,10 @@ Player.prototype.spawnSnake = function() {
 	snake.target = snake.head.position.clone();
 	snake.onDeath.playerDeath = function(killer) {
 		$this.snake = null;
-		$this.onDeath("enemy", killer.owner)
+		$this.emit('death', 'enemy', killer.owner)
 	};
 	snake.onBallEaten.notify = function(ball, type) {
-		console.log($this.name.yellow +" ate a "+type+" ball");
+		console.log($this.coloredName +" ate a "+type+" ball");
 	}
 	this.snake = snake;
 }

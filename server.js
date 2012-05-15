@@ -31,7 +31,7 @@ var gameRunning = false;
 
 var tryStartGame = function() {
 	if(!gameRunning) {
-		if(Object.keys(players).length >= 1) {
+		if(Object.keys(players).length >= 2) {
 			generateBalls(50);
 			Object.forEach(players, function(p) {
 				p.spawnSnake();
@@ -48,39 +48,34 @@ io = socketio.listen(app);
 io.set('log level', 2);
 io.set('close timeout', 5);
 io.sockets.on('connection', Player.listener(function() {
-	console.log("Player ".grey + this.name.yellow + " joined".grey);
+	console.log("Player ".grey + this.coloredName + " joined".grey);
+
+	players[this.name] = this;
 
 	if(tryStartGame()) {
 	}
-	else {
+	else if(gameRunning) {
 		var totalPlayerMass = Object.reduce(players, function(sum, p) { return sum + (p.snake ? p.snake.mass : 0) }, 0);
 		if(totalPlayerMass <= universe.totalMass / 3)
 			this.spawnSnake();
 	}
-
-	players[this.name] = this;
-
-	this.onQuit.stuff = function() {
+	this.on('quit', function() {
 		delete players[this.name];
-		console.log("Player ".grey + this.name.yellow + " quit".grey);
+		console.log("Player ".grey + this.coloredName + " quit".grey);
 		//Clear the world if the player is last to leave
 		if(Object.every(players, function(p) {return p.snake == null})) {
 			gameRunning = false;
 			universe.clear();
 			tryStartGame();
 		}
-	}
-
-	this.onChat.stuff = function(msg) {	
+	}).on('chat', function(msg) {	
 		var data = {n: this.name, c: this.color.toInt(), m: msg};
 		this.socket.emit('chat', data);
 		this.socket.broadcast.emit('chat', data);
-		console.log(this.name.yellow + ": ".grey + msg)
-	};
-
-	this.onDeath.stuff = function(type, killer) {
+		console.log(this.coloredName + ": ".grey + msg)
+	}).on('death', function(type, killer) {
 		if(type == "enemy") {
-			console.log(this.name.yellow + " was killed by " + killer.name.yellow);
+			console.log(this.coloredName + " was killed by " + killer.coloredName);
 			// var data = {n: "", c: new Color(192, 192, 192).toInt(), m: "Killed by "+ killer.name};
 			// this.socket.emit('chat', data);
 			io.sockets.emit(
@@ -91,7 +86,7 @@ io.sockets.on('connection', Player.listener(function() {
 		}
 		else if(type == "console")
 			console.log(this.name.yellow + " eliminated");
-	}
+	});
 
 }));
 
