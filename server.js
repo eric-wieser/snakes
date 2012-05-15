@@ -58,6 +58,10 @@ io.sockets.on('connection', Player.listener(function() {
 		var totalPlayerMass = Object.reduce(players, function(sum, p) { return sum + (p.snake ? p.snake.mass : 0) }, 0);
 		if(totalPlayerMass <= universe.totalMass / 3)
 			this.spawnSnake();
+		else
+			this.socket.emit('servermessage', 'You\'ll have to wait for the next game');
+	} else {
+		this.socket.emit('servermessage', 'Waiting for more players');
 	}
 	this.on('quit', function() {
 		delete players[this.name];
@@ -227,7 +231,7 @@ cli.setPrompt("> ".grey, 2);
 var log = console.log;
 console.log = function() {
 	cli.pause();
-	process.stdout.write('\x1b[2K\r');
+	cli.output.write('\x1b[2K\r');
 	log.apply(console, Array.prototype.slice.call(arguments));
 	cli.resume();
 	cli._refreshLine();
@@ -252,7 +256,7 @@ cli.on('line', function(line) {
 		var player = players[matches[1]]
 		player && player.snake && player.snake.maxMass *= 2;
 	} else {
-		console.log("sending message");
+		console.log('sending "'.grey+line+'"'.grey);
 		io.sockets.emit('servermessage', ""+line);
 	}
 	cli.prompt();
