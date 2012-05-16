@@ -3,6 +3,7 @@ var express = require('express');
 var socketio = require('socket.io');
 var readline = require('readline');
 var colors = require('colors');
+var util = require('util');
 
 require('./util');
 require('./color');
@@ -36,7 +37,7 @@ var tryStartGame = function() {
 			Object.forEach(players, function(p) {
 				p.spawnSnake();
 			});
-			console.log("Balls placed");
+			util.log("Balls placed");
 			gameRunning = true;
 			return true;
 		}
@@ -44,16 +45,18 @@ var tryStartGame = function() {
 	return false;
 }
 
-
 function htmlEntities(str) {
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 var io = socketio.listen(app);
-io.set('log level', 1);
-io.set('close timeout', 5);
+io.configure('development', function() {
+	io.set('log level', 1);
+	io.set('close timeout', 2.5);
+})
+
 io.sockets.on('connection', Player.listener(function() {
-	console.log("Player ".grey + this.coloredName + " joined".grey);
+	util.log("Player ".grey + this.coloredName + " joined".grey);
 
 	players[this.name] = this;
 
@@ -70,7 +73,7 @@ io.sockets.on('connection', Player.listener(function() {
 	}
 	this.on('quit', function() {
 		delete players[this.name];
-		console.log("Player ".grey + this.coloredName + " quit".grey);
+		util.log("Player ".grey + this.coloredName + " quit".grey);
 		//Clear the world if the player is last to leave
 		if(Object.every(players, function(p) {return p.snake == null})) {
 			gameRunning = false;
@@ -81,10 +84,10 @@ io.sockets.on('connection', Player.listener(function() {
 		var data = {n: this.name, c: this.color.toInt(), m: msg};
 		this.socket.emit('chat', data);
 		this.socket.broadcast.emit('chat', data);
-		console.log(this.coloredName + ": ".grey + msg)
+		util.log(this.coloredName + ": ".grey + msg)
 	}).on('death', function(type, killer) {
 		if(type == "enemy") {
-			console.log(this.coloredName + " was killed by " + killer.coloredName);
+			util.log(this.coloredName + " was killed by " + killer.coloredName);
 			// var data = {n: "", c: new Color(192, 192, 192).toInt(), m: "Killed by "+ killer.name};
 			// this.socket.emit('chat', data);
 			io.sockets.emit(
@@ -94,7 +97,7 @@ io.sockets.on('connection', Player.listener(function() {
 			killer.snake && (killer.snake.maxMass *= 2);
 		}
 		else if(type == "console")
-			console.log(this.name.yellow + " eliminated");
+			util.log(this.name.yellow + " eliminated");
 	});
 
 }));
@@ -186,7 +189,7 @@ i = setInterval(function() {
 	universe.update(dt);
 	Object.forEach(players, function(p) {
 		try {p.snake && p.snake.update(dt); }
-		catch(e) { console.log("O shit", e, p); }
+		catch(e) { util.log("O shit", e, p); }
 	});
 	updateClients();
 	lastt = t;
@@ -204,7 +207,7 @@ setInterval(function() {
 	io.sockets.emit('scores', scores);
 }, 500);
 
-
+//Create a command line interface from the console
 var cli = readline.createInterface(
 	process.stdin,
 	process.stdout,
@@ -233,17 +236,26 @@ var cli = readline.createInterface(
 	}
 );
 cli.setPrompt("> ".grey, 2);
-var log = console.log;
-console.log = function() {
-	cli.pause();
-	cli.output.write('\x1b[2K\r');
-	log.apply(console, Array.prototype.slice.call(arguments));
-	cli.resume();
-	cli._refreshLine();
-}
+
+//Fix the way the cli handles logging while the user is typing
+(function() {
+	var oldWrite = process.stdout.write;
+	var newStdout = Object.create(process.stdout);
+	newStdout.write = function() {
+		//cli.pause();
+		cli.output.write('\x1b[2K\r');
+		var result = oldWrite.apply(this, Array.prototype.slice.call(arguments));
+		//cli.resume();
+		cli._refreshLine();
+		return result;
+	}
+	process.__defineGetter__('stdout', function() { return newStdout; });
+})();
+
+//Add commands
 cli.on('line', function(line) {
 	if(/^\s*players/.test(line)) {
-		console.log(Object.values(players).pluck('coloredName').join(', '));
+		util.log(Object.values(players).pluck('coloredName').join(', '));
 	} else if(/^\s*mass/.test(line)) {
 		console.log('Total mass of the universe: '+universe.totalMass);
 	} else if(/^\s*score/.test(line)) {
@@ -283,7 +295,7 @@ cli.on('line', function(line) {
 		var player = players[matches[1]]
 		player && player.snake && (player.snake.maxMass *= 2);
 	} else {
-		console.log('sending "'.grey+line+'"'.grey);
+		util.log('sending "'.grey+line+'"'.grey);
 		io.sockets.emit('servermessage', ""+line);
 	}
 	cli.prompt();
