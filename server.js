@@ -241,6 +241,28 @@ cli.on('line', function(line) {
 		console.log(Object.values(players).pluck('coloredName').join(', '));
 	} else if(/^\s*mass/.test(line)) {
 		console.log('Total mass of the universe: '+universe.totalMass);
+	} else if(/^\s*score/.test(line)) {
+		var width = cli.columns;
+		var perMass = width / universe.totalMass;
+		var bar = "";
+		var barLength = 0;
+		var scoreSoFar = 0;
+
+		Object.forEach(players, function(p) {
+			if(p.snake) {
+				var score = p.snake.mass;
+				scoreSoFar += score;
+				var thisBar = "";
+				while(barLength + thisBar.length < scoreSoFar * perMass)
+					thisBar += '█';
+
+				barLength += thisBar.length;
+				bar += thisBar.colored(p.color);
+			}
+		});
+
+		console.log(bar);
+		console.log(Object.values(players).pluck('coloredName').join(', '));
 	} else if(matches = /^\s*balls (\d+)/.exec(line)) {
 		generateBalls(+matches[1]);
 	} else if(matches = /^\s*kick (.+)/.exec(line)) {
@@ -254,7 +276,7 @@ cli.on('line', function(line) {
 		player && !player.snake && player.spawnSnake();
 	} else if(matches = /^\s*help (.+)/.exec(line)) {
 		var player = players[matches[1]]
-		player && player.snake && player.snake.maxMass *= 2;
+		player && player.snake && (player.snake.maxMass *= 2);
 	} else {
 		console.log('sending "'.grey+line+'"'.grey);
 		io.sockets.emit('servermessage', ""+line);
