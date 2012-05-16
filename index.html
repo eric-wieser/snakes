@@ -376,7 +376,8 @@
 								playing = true;
 							});
 						} else if(data instanceof Object && data.error) {
-							alert(data.error)
+							alert(data.error);
+							isTrying = false;
 						}
 					});
 				}
@@ -399,6 +400,9 @@
 			// });
 			socket.on('servermessage', function (str) {
 				$('#message').html(str);
+			});
+			socket.on('ping', function() {
+				socket.emit('ping');
 			});
 			socket.on('scores', function (scores) {
 				//Get the DOM elements

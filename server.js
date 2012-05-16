@@ -12,11 +12,11 @@ require('./entity');
 require('./ball');
 require('./world');
 require('./snake');
-players = {};
 require('./player');
-universe = new World(2000, 2000);
+require('./game');
+//universe = new World(2000, 2000);
 
-
+var game = new Game();
 
 var app = express.createServer();
 app.listen(+process.argv[2] || 8090);
@@ -29,22 +29,22 @@ app.get('/local', function (req, res) {
 	res.sendfile(__dirname + '/snakes.html');
 });
 
-var gameRunning = false;
+// var gameRunning = false;
 
-var tryStartGame = function() {
-	if(!gameRunning) {
-		if(Object.keys(players).length >= 2) {
-			generateBalls(50);
-			Object.forEach(players, function(p) {
-				p.spawnSnake(universe);
-			});
-			util.log("Balls placed");
-			gameRunning = true;
-			return true;
-		}
-	}
-	return false;
-}
+// var tryStartGame = function() {
+// 	if(!gameRunning) {
+// 		if(Object.keys(players).length >= 2) {
+// 			generateBalls(50);
+// 			Object.forEach(players, function(p) {
+// 				p.spawnSnake(universe);
+// 			});
+// 			util.log("Balls placed");
+// 			gameRunning = true;
+// 			return true;
+// 		}
+// 	}
+// 	return false;
+// }
 
 function htmlEntities(str) {
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -56,32 +56,23 @@ io.configure('development', function() {
 	io.set('close timeout', 2.5);
 })
 
-io.sockets.on('connection', Player.listener(function() {
-	util.log("Player ".grey + this.coloredName + " joined".grey);
+io.sockets.on('connection', game.playerListener());
 
-	players[this.name] = this;
+game.on('player.join', function(p) {
+	util.log("Player ".grey + p.coloredName + " joined".grey);
 
-	if(tryStartGame()) {
-	}
-	else if(gameRunning) {
-		var totalPlayerMass = Object.reduce(players, function(sum, p) { return sum + (p.snake ? p.snake.mass : 0) }, 0);
-		if(totalPlayerMass <= universe.totalMass / 3)
-			this.spawnSnake(universe);
+	if(this.running) {
+		if(this.joinable())
+			p.spawnSnake(game.world);
 		else
-			this.socket.emit('servermessage', 'You\'ll have to wait for the next game');
+			p.socket.emit('servermessage', 'You\'ll have to wait for the next game');
+	} else if(this.connectedPlayerCount() >= 2) {
+		this.start();
 	} else {
-		this.socket.emit('servermessage', 'Waiting for more players');
+		p.socket.emit('servermessage', 'Waiting for more players');
 	}
-	this.on('quit', function() {
-		delete players[this.name];
-		util.log("Player ".grey + this.coloredName + " quit".grey);
-		//Clear the world if the player is last to leave
-		if(Object.every(players, function(p) {return p.snake == null})) {
-			gameRunning = false;
-			universe.clear();
-			tryStartGame();
-		}
-	}).on('chat', function(msg) {	
+
+	p.on('chat', function(msg) {	
 		var data = {n: this.name, c: this.color.toInt(), m: msg};
 		this.socket.emit('chat', data);
 		this.socket.broadcast.emit('chat', data);
@@ -100,8 +91,16 @@ io.sockets.on('connection', Player.listener(function() {
 		else if(type == "console")
 			util.log(this.name.yellow + " eliminated");
 	});
-
-}));
+})
+.on('player.quit', function(p) {
+	util.log("Player ".grey + p.coloredName + " quit".grey);
+	//Clear the world if the player is last to leave
+	if(Object.every(this.players, function(p) {return p.snake == null})) {
+		this.reset();
+		if(this.connectedPlayerCount() >= 2)
+			this.start();
+	}
+});
 
 
 // universe.onEntityRemoved.updateClients = function(e) {
@@ -119,7 +118,7 @@ updateClients = function() {
 	var data = {};
 	data.e = {};
 	data.s = {};
-	universe.entities.forEach(function(e) {
+	game.world.entities.forEach(function(e) {
 		var entityUpdate = {};
 		entityUpdate.p = e.position.toFixed(2);
 		entityUpdate.c = e.color.toInt();
@@ -134,7 +133,7 @@ updateClients = function() {
 	// Object.forEach(players, function(snake, name) {
 	// 	data.s[name] = snake.balls.pluck('_id');
 	// });
-	Object.forEach(players, function(player, name) {
+	Object.forEach(game.players, function(player, name) {
 	 	player.snake && (data.s[name] = player.snake.head._id);
 	});
 
@@ -173,39 +172,45 @@ var lastSync = lastt;
 
 i = setInterval(function() {
 	var t = +Date.now();
-	var dt = (t - lastt) / 1000.0;
-	
-	Object.forEach(players, function(player) {
-		var snake = player.snake;
-		if(snake && snake.target) {
-			var displacement = snake.target.minus(snake.head.position);
-			var distance = displacement.length;
-			var force = Math.min(distance*5, 400)*snake.head.mass;
+	if(game.running) {
+		var dt = (t - lastt) / 1000.0;
+		
+		Object.forEach(game.players, function(player) {
+			var snake = player.snake;
+			if(snake && snake.target) {
+				var displacement = snake.target.minus(snake.head.position);
+				var distance = displacement.length;
+				var force = Math.min(distance*5, 400)*snake.head.mass;
 
-			snake.head.forces.player = distance > 1 ?
-				displacement.timesEquals(force / distance) :
-				Vector.zero;
-		}
-	});
-	universe.update(dt);
-	Object.forEach(players, function(p) {
-		try {p.snake && p.snake.update(dt); }
-		catch(e) { util.log("O shit", e, p); }
-	});
-	updateClients();
+				snake.head.forces.player = distance > 1 ?
+					displacement.timesEquals(force / distance) :
+					Vector.zero;
+			}
+		});
+		game.world.update(dt);
+		Object.forEach(game.players, function(p) {
+			try {p.snake && p.snake.update(dt); }
+			catch(e) { util.log("O shit", e, p); }
+		});
+		updateClients();
+	} else {
+		io.sockets.emit('ping', function(f) {});
+	}
 	lastt = t;
 }, 1000 / 30.0);
 
 setInterval(function() {
-	scores = []
-	var mass = universe.totalMass;
-	Object.forEach(players, function(player, name) {
-		player.snake && scores.push([name, Math.round(1000*player.snake.mass / mass), player.snake.color.toString()])
-	});
-	scores.sort(function(a, b){ 
-		return a[1] > b[1] ? 1 : a[1] < b[1] ? -1 : 0;
-	});
-	io.sockets.emit('scores', scores);
+	if(game.running) {
+		scores = []
+		var mass = game.world.totalMass;
+		Object.forEach(game.players, function(player, name) {
+			player.snake && scores.push([name, Math.round(1000*player.snake.mass / mass), player.snake.color.toString()])
+		});
+		scores.sort(function(a, b){ 
+			return a[1] > b[1] ? 1 : a[1] < b[1] ? -1 : 0;
+		});
+		io.sockets.emit('scores', scores);
+	}
 }, 500);
 
 //Create a command line interface from the console
@@ -222,7 +227,7 @@ var cli = readline.createInterface(
 			if(line.indexOf(command) == 0) {
 				var name = line.substr(command.length + 1);
 				var completions = [];
-				Object.forEach(players, function(p, n) {
+				Object.forEach(game.players, function(p, n) {
 					if(n.indexOf(name) == 0)
 						completions.push(command + ' ' + n);
 				})
@@ -254,17 +259,19 @@ cli.setPrompt("> ".grey, 2);
 //Add commands
 cli.on('line', function(line) {
 	if(/^\s*players/.test(line)) {
-		util.log(Object.values(players).pluck('coloredName').join(', '));
+		util.log(Object.values(game.players).pluck('coloredName').join(', '));
+	} else if(/^\s*game/.test(line)) {
+		console.log(game);
 	} else if(/^\s*mass/.test(line)) {
-		console.log('Total mass of the universe: '+universe.totalMass);
+		console.log('Total mass of the universe: '+game.world.totalMass);
 	} else if(/^\s*score/.test(line)) {
 		var width = cli.columns;
-		var perMass = width / universe.totalMass;
+		var perMass = width / game.world.totalMass;
 		var bar = "";
 		var barLength = 0;
 		var scoreSoFar = 0;
 
-		Object.forEach(players, function(p) {
+		Object.forEach(game.players, function(p) {
 			if(p.snake) {
 				var score = p.snake.mass;
 				scoreSoFar += score;
@@ -278,20 +285,20 @@ cli.on('line', function(line) {
 		});
 
 		console.log(bar);
-		console.log(Object.values(players).pluck('coloredName').join(', '));
+		console.log(Object.values(game.players).pluck('coloredName').join(', '));
 	} else if(matches = /^\s*balls (\d+)/.exec(line)) {
-		generateBalls(+matches[1]);
+		game.generateBalls(+matches[1]);
 	} else if(matches = /^\s*kick (.+)/.exec(line)) {
-		var player = players[matches[1]]
+		var player = game.players[matches[1]]
 		player && player.disconnect();
 	} else if(matches = /^\s*kill (.+)/.exec(line)) {
-		var player = players[matches[1]]
+		var player = game.players[matches[1]]
 		player && player.kill();
 	} else if(matches = /^\s*spawn (.+)/.exec(line)) {
-		var player = players[matches[1]]
-		player && !player.snake && player.spawnSnake(universe);
+		var player = game.players[matches[1]]
+		player && !player.snake && player.spawnSnake(game.world);
 	} else if(matches = /^\s*help (.+)/.exec(line)) {
-		var player = players[matches[1]]
+		var player = game.players[matches[1]]
 		player && player.snake && (player.snake.maxMass *= 2);
 	} else {
 		util.log('sending "'.grey+line+'"'.grey);

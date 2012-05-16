@@ -64,6 +64,7 @@ Player.prototype.chat = function(msg) {
 Player.prototype.spawnSnake = function(world) {
 	if(this.connected) {
 		if(this.snake) this.snake.destroy();
+
 		var $this = this;
 		var snake = new Snake(
 			10,
