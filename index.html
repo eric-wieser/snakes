@@ -533,26 +533,39 @@
 					e.drawTo(ctx);
 				});
 				Object.forEach(heads, function(h) {
-					if(h.position.x + h.radius < viewOrigin.x) {
-						drawArrow(viewOrigin.x, h.position.y, 0);
-						ctx.fillStyle = h.color+"";
-						ctx.fill();
-					} else if(h.position.x - h.radius > viewOrigin.x + width) {
-						drawArrow(viewOrigin.x + width, h.position.y, Math.PI);
-						ctx.fillStyle = h.color+"";
-						ctx.fill();
-					} else if(h.position.y + h.radius < viewOrigin.y) {
-						drawArrow(h.position.x, viewOrigin.y,  Math.PI / 2);
-						ctx.fillStyle = h.color+"";
-						ctx.fill();
-					} else if(h.position.y - h.radius > viewOrigin.y + height) {
-						drawArrow(h.position.x, viewOrigin.y + height, 3 * Math.PI / 2);
-						ctx.fillStyle = h.color+"";
-						ctx.fill();
-					} else {
+					var off = {
+						left:   h.position.x + h.radius < viewOrigin.x,
+						right:  h.position.x - h.radius > viewOrigin.x + width,
+						top:    h.position.y + h.radius < viewOrigin.y,
+						bottom: h.position.y - h.radius > viewOrigin.y + height
+					}
+					off.any = off.right || off.left || off.top || off.bottom;
+					if(!off.any) {
 						ctx.beginPath();
 						ctx.arc(h.position.x, h.position.y, h.radius / 2, 0, Math.PI * 2, false);
 						ctx.fillStyle = "white";
+						ctx.fill();
+					}
+					else {
+						if(off.left && off.top)
+							drawArrow(viewOrigin.x,         viewOrigin.y,          Math.PI / 4);
+						else if(off.right && off.top)
+							drawArrow(viewOrigin.x + width, viewOrigin.y,          3*Math.PI / 4);
+						else if(off.left && off.bottom)
+							drawArrow(viewOrigin.x,         viewOrigin.y + height, -Math.PI / 4);
+						else if(off.right && off.bottom)
+							drawArrow(viewOrigin.x + width, viewOrigin.y + height, -3*Math.PI / 4);
+
+						else if(off.left)
+							drawArrow(viewOrigin.x, h.position.y, 0);
+						else if(off.right)
+							drawArrow(viewOrigin.x + width, h.position.y, Math.PI);
+						else if(off.top)
+							drawArrow(h.position.x, viewOrigin.y,  Math.PI / 2);
+						else if(off.bottom)
+							drawArrow(h.position.x, viewOrigin.y + height, -Math.PI / 2);
+						
+						ctx.fillStyle = h.color+"";
 						ctx.fill();
 					}
 				});
