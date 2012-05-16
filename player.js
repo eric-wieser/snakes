@@ -7,7 +7,7 @@ Player = function Player(socket, name, color) {
 	this.color = color;
 	this.name = name;
 	this.connected = true;
-	this.resendAllEntities();
+	//this.resendAllEntities();
 	
 
 	var $this = this;
@@ -72,23 +72,26 @@ Player.prototype.resendAllEntities = function() {
 }
 
 Player.prototype.spawnSnake = function() {
-	var $this = this;
-	var snake = new Snake(
-		10,
-		this.color,
-		universe.randomPosition(),
-		universe
-	);
-	snake.owner = this;
-	snake.target = snake.head.position.clone();
-	snake.onDeath.playerDeath = function(killer) {
-		$this.snake = null;
-		$this.emit('death', 'enemy', killer.owner)
-	};
-	snake.onBallEaten.notify = function(ball, type) {
-		console.log($this.coloredName +" ate a "+type+" ball");
+	if(this.connected) {
+		if(this.snake) this.snake.destroy();
+		var $this = this;
+		var snake = new Snake(
+			10,
+			this.color,
+			universe.randomPosition(),
+			universe
+		);
+		snake.owner = this;
+		snake.target = snake.head.position.clone();
+		snake.onDeath.playerDeath = function(killer) {
+			$this.snake = null;
+			$this.emit('death', 'enemy', killer.owner)
+		};
+		snake.onBallEaten.notify = function(ball, type) {
+			console.log($this.coloredName +" ate a "+type+" ball");
+		}
+		this.snake = snake;
 	}
-	this.snake = snake;
 }
 
 //returns a function that listens to a socket, and calls onJoined when a player joins
