@@ -7,11 +7,10 @@ Player = function Player(socket, name, color) {
 	this.color = color;
 	this.name = name;
 	this.connected = true;
+	this.kills = 0;
 	this.resendAllEntities();
 	
-
 	var $this = this;
-
 
 	socket.on('playercontrol', function(target) {
 		if($this.snake) {
@@ -72,6 +71,7 @@ Player.prototype.resendAllEntities = function() {
 }
 
 Player.prototype.spawnSnake = function() {
+	this.kills = 0;
 	var $this = this;
 	var snake = new Snake(
 		10,
