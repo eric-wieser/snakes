@@ -200,17 +200,7 @@ i = setInterval(function() {
 }, 1000 / 30.0);
 
 setInterval(function() {
-	if(game.running) {
-		scores = []
-		var mass = game.world.totalMass;
-		Object.forEach(game.players, function(player, name) {
-			player.snake && scores.push([name, Math.round(1000*player.snake.mass / mass), player.snake.color.toString()])
-		});
-		scores.sort(function(a, b){ 
-			return a[1] > b[1] ? 1 : a[1] < b[1] ? -1 : 0;
-		});
-		io.sockets.emit('scores', scores);
-	}
+	io.sockets.emit('scores', game.scores());
 }, 500);
 
 //Create a command line interface from the console

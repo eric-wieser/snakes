@@ -95,6 +95,7 @@ Game.prototype.start = function() {
 		p.spawnSnake(this.world);
 	}, this);
 	this.generateBalls(50);
+	io.sockets.emit('servermessage', "New game started!");
 }
 
 Game.prototype.reset = function() {
@@ -104,4 +105,18 @@ Game.prototype.reset = function() {
 		p.kill();
 	});
 	delete this.world;
+	this.running = false;
+}
+
+Game.prototype.scores = function() {
+	if(!this.running) return;
+	var scores = []
+	var mass = this.world.totalMass;
+	Object.forEach(this.players, function(player, name) {
+		player.snake && scores.push([name, Math.round(1000*player.snake.mass / mass), player.snake.color.toString()])
+	});
+	scores.sort(function(a, b){ 
+		return a[1] > b[1] ? 1 : a[1] < b[1] ? -1 : 0;
+	});
+	return scores;
 }

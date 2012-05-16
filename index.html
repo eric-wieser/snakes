@@ -409,38 +409,41 @@
 				var scoreList = $('#scores').empty();
 				var scoreBar = $('.score-bar').empty();
 
-				//Keep track of left and rightmost bars
-				var mostLeft = 0;
-				var mostRight = 0;
+				if(scores) {
 
-				scores.forEach(function(score, i) {
-					score = { name: score[0], value: score[1], color: score[2] };
-					//Add names to scoreboard
-					$('<li />').append(
-						$('<span class="name"/>').text(score.name), " ", 
-						$('<span />').text(score.value)
-					).css('color', score.color).appendTo(scoreList);
+					//Keep track of left and rightmost bars
+					var mostLeft = 0;
+					var mostRight = 0;
 
-					//Pad out the bar, alternating sides
-					if(i%2 == 0) {
-						//left
-						$('<div />').css({
-							backgroundColor: score.color,
-							width: (score.value / 10) + '%',
-							left:  (mostLeft    / 10) + '%'
-						}).appendTo(scoreBar);
-						mostLeft += score.value;
-					}
-					else {
-						//right
-						$('<div />').css({
-							backgroundColor: score.color,
-							width: (score.value / 10) + '%',
-							right: (mostRight   / 10) + '%'
-						}).appendTo(scoreBar);
-						mostRight += score.value;
-					}
-				});
+					scores.forEach(function(score, i) {
+						score = { name: score[0], value: score[1], color: score[2] };
+						//Add names to scoreboard
+						$('<li />').append(
+							$('<span class="name"/>').text(score.name), " ", 
+							$('<span />').text(score.value)
+						).css('color', score.color).appendTo(scoreList);
+
+						//Pad out the bar, alternating sides
+						if(i%2 == 0) {
+							//left
+							$('<div />').css({
+								backgroundColor: score.color,
+								width: (score.value / 10) + '%',
+								left:  (mostLeft    / 10) + '%'
+							}).appendTo(scoreBar);
+							mostLeft += score.value;
+						}
+						else {
+							//right
+							$('<div />').css({
+								backgroundColor: score.color,
+								width: (score.value / 10) + '%',
+								right: (mostRight   / 10) + '%'
+							}).appendTo(scoreBar);
+							mostRight += score.value;
+						}
+					});
+				}
 			});
 			socket.on('entityupdates', function (data) {
 				Object.forEach(data.e, function(edata, id) {
