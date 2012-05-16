@@ -13,8 +13,9 @@ require('./ball');
 require('./world');
 require('./snake');
 players = {};
-universe = new World(2000, 2000);
 require('./player');
+universe = new World(2000, 2000);
+
 
 
 var app = express.createServer();
@@ -35,7 +36,7 @@ var tryStartGame = function() {
 		if(Object.keys(players).length >= 2) {
 			generateBalls(50);
 			Object.forEach(players, function(p) {
-				p.spawnSnake();
+				p.spawnSnake(universe);
 			});
 			util.log("Balls placed");
 			gameRunning = true;
@@ -65,7 +66,7 @@ io.sockets.on('connection', Player.listener(function() {
 	else if(gameRunning) {
 		var totalPlayerMass = Object.reduce(players, function(sum, p) { return sum + (p.snake ? p.snake.mass : 0) }, 0);
 		if(totalPlayerMass <= universe.totalMass / 3)
-			this.spawnSnake();
+			this.spawnSnake(universe);
 		else
 			this.socket.emit('servermessage', 'You\'ll have to wait for the next game');
 	} else {
@@ -242,10 +243,8 @@ cli.setPrompt("> ".grey, 2);
 	var oldWrite = process.stdout.write;
 	var newStdout = Object.create(process.stdout);
 	newStdout.write = function() {
-		//cli.pause();
 		cli.output.write('\x1b[2K\r');
 		var result = oldWrite.apply(this, Array.prototype.slice.call(arguments));
-		//cli.resume();
 		cli._refreshLine();
 		return result;
 	}
@@ -290,7 +289,7 @@ cli.on('line', function(line) {
 		player && player.kill();
 	} else if(matches = /^\s*spawn (.+)/.exec(line)) {
 		var player = players[matches[1]]
-		player && !player.snake && player.spawnSnake();
+		player && !player.snake && player.spawnSnake(universe);
 	} else if(matches = /^\s*help (.+)/.exec(line)) {
 		var player = players[matches[1]]
 		player && player.snake && (player.snake.maxMass *= 2);

@@ -59,27 +59,17 @@ Player.prototype.chat = function(msg) {
 		this.emit('chat', msg);
 	}
 }
-Player.prototype.resendAllEntities = function() {
-	var p = this;
-	universe.entities.forEach(function(e) {
-		p.socket.emit('entityadded', {
-			p: e.position.toFixed(2),
-			r: e.radius,
-			c: e.color.toInt(),
-			i: e._id
-		});
-	});
-}
 
-Player.prototype.spawnSnake = function() {
+
+Player.prototype.spawnSnake = function(world) {
 	if(this.connected) {
 		if(this.snake) this.snake.destroy();
 		var $this = this;
 		var snake = new Snake(
 			10,
 			this.color,
-			universe.randomPosition(),
-			universe
+			world.randomPosition(),
+			world
 		);
 		snake.owner = this;
 		snake.target = snake.head.position.clone();
