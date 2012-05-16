@@ -15,7 +15,11 @@ Object.defineEvent = function(object, name, cancellable) {
 		}
 	}
 }
-
+Object.values = function(obj) {
+	var values = [];
+	Object.forEach(obj, function(v) { values.push(v) });
+	return values;
+}
 Object.reduce = function(obj, f, start, thisPtr) {
 	current = start || 0;
 	for(var k in obj) {
@@ -26,7 +30,8 @@ Object.reduce = function(obj, f, start, thisPtr) {
 	return current;
 };
 
-Array.prototype.contains = function(x) { return this.indexOf(x) != -1; }
+Array.prototype.contains = function(x) { return this.indexOf(x) != -1; };
+Array.prototype.pluck = function(prop) { return this.map(function(x) { return x[prop]; }); };
 
 Array.prototype.forEveryPair = function(callback, thisPtr) {
 	var l = this.length;

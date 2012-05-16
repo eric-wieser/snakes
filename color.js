@@ -45,7 +45,16 @@ Color.prototype.toHexString = function() {
 };
 Color.prototype.toInt = function(rgb) {
 	return Math.round(this.r) << 16 | Math.round(this.g) << 8 | Math.round(this.b);
-}
+};
+Object.defineProperty(String.prototype, 'colored', {
+	value: function(c) {
+		var r = Math.round(c.r * 5 / 255);
+		var g = Math.round(c.g * 5 / 255);
+		var b = Math.round(c.b * 5 / 255);
+		return '\033[38;5;' + (16 + r*36 + g*6 + b) + 'm' + this + '\033[0m';
+	},
+	enumerable: false
+});
 Color.fromInt = function(rgb) {
 	var b = rgb & 0xff;
 	var g = (rgb >>= 8) & 0xff;
@@ -69,9 +78,11 @@ Color.ify = function(data) {
 	else if(data instanceof Object)
 		return new Color(data.r, data.g, data.b);
 }
-Color.randomHue = function() {
-	var a = Math.random() * 6;
-	var b = Math.random() * 128 - 64;
+Color.niceColor = function(a) {
+	a *= 6;
+	var b = (a % 1) * 128 - 64;
+	// var a = Math.random() * 6;
+	// var b = Math.random() * 128 - 64;
 
 	if(a < 1)
 		return new Color(255, 64 + b, 64 - b); //yellow-magenta face

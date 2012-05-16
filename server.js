@@ -30,17 +30,17 @@ app.get('/local', function (req, res) {
 var gameRunning = false;
 
 var killTypes=[
-	'Double',
-	'Multi',
-	'Mega',
-	'Ultra',
-	'Monster',
-	'Ludicrous',
+	'Double kill',
+	'Multi kill',
+	'Mega kill',
+	'Ultra kill',
+	'Monster kill',
+	'Ludicrous kill',
 	'Holy Shit',];
 
 var tryStartGame = function() {
 	if(!gameRunning) {
-		if(Object.keys(players).length >= 1) {
+		if(Object.keys(players).length >= 2) {
 			generateBalls(50);
 			Object.forEach(players, function(p) {
 				p.spawnSnake();
@@ -57,55 +57,54 @@ io = socketio.listen(app);
 io.set('log level', 2);
 io.set('close timeout', 5);
 io.sockets.on('connection', Player.listener(function() {
-	console.log("Player ".grey + this.name.yellow + " joined".grey);
-
-	if(tryStartGame()) {
-	}
-	else {
-		var totalPlayerMass = Object.reduce(players, function(sum, p) { return sum + (p.snake ? p.snake.mass : 0) }, 0);
-		if(totalPlayerMass <= universe.totalMass / 3)
-			this.spawnSnake();
-	}
+	console.log("Player ".grey + this.coloredName + " joined".grey);
 
 	players[this.name] = this;
 
-	this.onQuit.stuff = function() {
+	if(tryStartGame()) {
+	}
+	else if(gameRunning) {
+		var totalPlayerMass = Object.reduce(players, function(sum, p) { return sum + (p.snake ? p.snake.mass : 0) }, 0);
+		if(totalPlayerMass <= universe.totalMass / 3)
+			this.spawnSnake();
+		else
+			this.socket.emit('servermessage', 'You\'ll have to wait for the next game');
+	} else {
+		this.socket.emit('servermessage', 'Waiting for more players');
+	}
+	this.on('quit', function() {
 		delete players[this.name];
-		console.log("Player ".grey + this.name.yellow + " quit".grey);
+		console.log("Player ".grey + this.coloredName + " quit".grey);
 		//Clear the world if the player is last to leave
 		if(Object.every(players, function(p) {return p.snake == null})) {
 			gameRunning = false;
 			universe.clear();
 			tryStartGame();
 		}
-	}
-
-	this.onChat.stuff = function(msg) {	
+	}).on('chat', function(msg) {	
 		var data = {n: this.name, c: this.color.toInt(), m: msg};
 		this.socket.emit('chat', data);
 		this.socket.broadcast.emit('chat', data);
-		console.log(this.name.yellow + ": ".grey + msg)
-	};
-
-	this.onDeath.stuff = function(type, killer) {
+		console.log(this.coloredName + ": ".grey + msg)
+	}).on('death', function(type, killer) {
 		if(type == "enemy") {
 			killer.kills++;
-			console.log(this.name.yellow + " was killed by " + killer.name.yellow);
+			console.log(this.coloredName + " was killed by " + killer.coloredName);
 
 			if (killer.kills > 1 && killer.kills < killer.kills.length) {
-				killMessage = 'got a ' + killTypes[killer.kills - 1] +' kill on'
+				killMessage = ' ' + killTypes[killer.kills - 1] +': '
 			} else {
-				killMessage = 'killed'
+				killMessage = ''
 			}
 			io.sockets.emit(
 				'servermessage',
-				'<span style="color:' + killer.color.toString()+'">' + killer.name + '</span> ' + killMessage + 
-				' <span style="color:' + this.color.toString()+'">' + this.name + '</span>!');
+				'<span style="color:' + killer.color.toString()+'">' + killMessage + killer.name +
+				'</span> killed <span style="color:' + this.color.toString()+'">' + this.name + '</span>!');
 			killer.snake && (killer.snake.maxMass *= 2);
 		}
 		else if(type == "console")
 			console.log(this.name.yellow + " eliminated");
-	}
+	});
 
 }));
 
@@ -215,16 +214,69 @@ setInterval(function() {
 }, 500);
 
 
-var cli = readline.createInterface(process.stdin, process.stdout);
-var prompt = function() {
-	cli.setPrompt("> ".grey, 2);
-	cli.prompt();
+var cli = readline.createInterface(
+	process.stdin,
+	process.stdout,
+	function (line) {
+		var playercommands = ['kick', 'kill', 'spawn', 'help'];
+		var commands = ['mass', 'balls'];
+		var allCommands = playercommands.concat(commands)
+
+		for(var i = 0; i < playercommands.length; i++) {
+			var command = playercommands[i]
+			if(line.indexOf(command) == 0) {
+				var name = line.substr(command.length + 1);
+				var completions = [];
+				Object.forEach(players, function(p, n) {
+					if(n.indexOf(name) == 0)
+						completions.push(command + ' ' + n);
+				})
+				return [completions, line];
+			}
+		}
+
+		var hits = allCommands.filter(function(c) {
+			return c.indexOf(line) == 0;
+		});
+		return [hits && hits.length ? hits : completions, line];
+	}
+);
+cli.setPrompt("> ".grey, 2);
+var log = console.log;
+console.log = function() {
+	cli.pause();
+	cli.output.write('\x1b[2K\r');
+	log.apply(console, Array.prototype.slice.call(arguments));
+	cli.resume();
+	cli._refreshLine();
 }
 cli.on('line', function(line) {
 	if(/^\s*players/.test(line)) {
-		console.log(Object.keys(players).join(', '));
+		console.log(Object.values(players).pluck('coloredName').join(', '));
 	} else if(/^\s*mass/.test(line)) {
 		console.log('Total mass of the universe: '+universe.totalMass);
+	} else if(/^\s*score/.test(line)) {
+		var width = cli.columns;
+		var perMass = width / universe.totalMass;
+		var bar = "";
+		var barLength = 0;
+		var scoreSoFar = 0;
+
+		Object.forEach(players, function(p) {
+			if(p.snake) {
+				var score = p.snake.mass;
+				scoreSoFar += score;
+				var thisBar = "";
+				while(barLength + thisBar.length < scoreSoFar * perMass)
+					thisBar += '█';
+
+				barLength += thisBar.length;
+				bar += thisBar.colored(p.color);
+			}
+		});
+
+		console.log(bar);
+		console.log(Object.values(players).pluck('coloredName').join(', '));
 	} else if(matches = /^\s*balls (\d+)/.exec(line)) {
 		generateBalls(+matches[1]);
 	} else if(matches = /^\s*kick (.+)/.exec(line)) {
@@ -238,14 +290,14 @@ cli.on('line', function(line) {
 		player && !player.snake && player.spawnSnake();
 	} else if(matches = /^\s*help (.+)/.exec(line)) {
 		var player = players[matches[1]]
-		player && player.snake && player.snake.maxMass *= 2;
+		player && player.snake && (player.snake.maxMass *= 2);
 	} else {
-		console.log("sending message");
+		console.log('sending "'.grey+line+'"'.grey);
 		io.sockets.emit('servermessage', ""+line);
 	}
-	prompt();
+	cli.prompt();
 }).on('close', function() {
 	io.sockets.emit('servermessage', 'Server going down!');
 	process.exit(0);
 });
-prompt();
+cli.prompt();
