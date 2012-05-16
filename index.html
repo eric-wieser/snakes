@@ -491,9 +491,8 @@
 				var message = data.m;
 				var history = $('#chat .history');
 				//alert(name + ":" + message);
-				$('<li />').append(
-					$('<span />').css('color', color+"").text(name),
-					' '+message
+				$('<li />').text(' '+message).prepend(
+					$('<span />').css('color', color+"").text(name)
 				).appendTo('#chat .history');
 
 				while(history.children().size() > 10)

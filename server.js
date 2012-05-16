@@ -44,8 +44,13 @@ var tryStartGame = function() {
 	return false;
 }
 
-io = socketio.listen(app);
-io.set('log level', 2);
+
+function htmlEntities(str) {
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+var io = socketio.listen(app);
+io.set('log level', 1);
 io.set('close timeout', 5);
 io.sockets.on('connection', Player.listener(function() {
 	console.log("Player ".grey + this.coloredName + " joined".grey);
@@ -84,8 +89,8 @@ io.sockets.on('connection', Player.listener(function() {
 			// this.socket.emit('chat', data);
 			io.sockets.emit(
 				'servermessage',
-				'<span style="color:' +killer.color.toString()+'">' +	killer.name + '</span> killed ' + 
-				'<span style="color:' +this.color.toString()+'">' +	this.name + '</span>!');
+				'<span style="color:' +killer.color.toString()+'">' + htmlEntities(killer.name) + '</span> killed ' + 
+				'<span style="color:' +this.color.toString()+'">' +	 htmlEntities(this.name) + '</span>!');
 			killer.snake && (killer.snake.maxMass *= 2);
 		}
 		else if(type == "console")
@@ -95,17 +100,17 @@ io.sockets.on('connection', Player.listener(function() {
 }));
 
 
-universe.onEntityRemoved.updateClients = function(e) {
-	io.sockets.emit('entitylost', e._id);
-}
-universe.onEntityAdded.updateClients = function(e) {
-	io.sockets.emit('entityadded', {
-		p: e.position.toFixed(2),
-		r: e.radius,
-		c: e.color.toInt(),
-		i: e._id
-	});
-}
+// universe.onEntityRemoved.updateClients = function(e) {
+// 	io.sockets.emit('entitylost', e._id);
+// }
+// universe.onEntityAdded.updateClients = function(e) {
+// 	io.sockets.emit('entityadded', {
+// 		p: e.position.toFixed(2),
+// 		r: e.radius,
+// 		c: e.color.toInt(),
+// 		i: e._id
+// 	});
+// }
 updateClients = function() {
 	var data = {};
 	data.e = {};
