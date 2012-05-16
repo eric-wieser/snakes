@@ -100,7 +100,10 @@ game.on('player.join', function(p) {
 		if(this.connectedPlayerCount() >= 2)
 			this.start();
 	}
-});
+})
+.on('start', function() {
+	io.sockets.emit('servermessage', "New game started!");
+})
 
 
 // universe.onEntityRemoved.updateClients = function(e) {

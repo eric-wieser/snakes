@@ -95,7 +95,7 @@ Game.prototype.start = function() {
 		p.spawnSnake(this.world);
 	}, this);
 	this.generateBalls(50);
-	io.sockets.emit('servermessage', "New game started!");
+	this.emit('start');
 }
 
 Game.prototype.reset = function() {
