@@ -79,7 +79,8 @@ Player.prototype.spawnSnake = function(world) {
 			$this.emit('death', 'enemy', killer.owner)
 		};
 		snake.onBallEaten.notify = function(ball, type) {
-			console.log($this.coloredName +" ate a "+type+" ball");
+			if(type == "tail" && ball.ownerSnake && ball.ownerSnake.owner)
+				util.log($this.coloredName +" ate some of "+ball.ownerSnake.owner.coloredName);
 		}
 		this.snake = snake;
 	}
