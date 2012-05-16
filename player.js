@@ -106,7 +106,7 @@ Player.listener = function(onJoined) {
 				callback({error: "Name length invalid"});
 			} else if(!(name in players)) {
 				gotResponse = true;
-				onJoined.call(new Player(socket, name, Color.ify(data.color)));
+				onJoined.call(new Player(socket, name, Color.niceColor(data.color)));
 				callback(true);
 			} else {
 				//Name already taken

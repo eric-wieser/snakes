@@ -78,9 +78,11 @@ Color.ify = function(data) {
 	else if(data instanceof Object)
 		return new Color(data.r, data.g, data.b);
 }
-Color.randomHue = function() {
-	var a = Math.random() * 6;
-	var b = Math.random() * 128 - 64;
+Color.niceColor = function(a) {
+	a *= 6;
+	var b = (a % 1) * 128 - 64;
+	// var a = Math.random() * 6;
+	// var b = Math.random() * 128 - 64;
 
 	if(a < 1)
 		return new Color(255, 64 + b, 64 - b); //yellow-magenta face

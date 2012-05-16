@@ -264,7 +264,8 @@
 			</div>
 		</div>
 		<script>
-			var color = Color.randomHue();
+			var colorId = Math.random();
+			var color = Color.niceColor(colorId);
 			$('.box').css({
 				borderTopColor: color.toString(),
 				borderBottomColor: color.toString(),
@@ -367,7 +368,7 @@
 					isTrying = true;
 					n = nameinput.val();
 
-					socket.emit('join', {name: n, color: color.toInt()}, function(data) {
+					socket.emit('join', {name: n, color: colorId}, function(data) {
 						if(data === true) {
 							localStorage['name'] = name = n;
 							$('#login').fadeOut(function() {
