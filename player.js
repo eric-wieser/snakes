@@ -74,14 +74,14 @@ Player.prototype.spawnSnake = function(world) {
 		);
 		snake.owner = this;
 		snake.target = snake.head.position.clone();
-		snake.onDeath.playerDeath = function(killer) {
+		snake.on('death', function(killer) {
 			$this.snake = null;
 			$this.emit('death', 'enemy', killer.owner)
-		};
-		snake.onBallEaten.notify = function(ball, type) {
-			if(type == "tail" && ball.ownerSnake && ball.ownerSnake.owner)
+		});
+		snake.on('eat.tail', function(ball) {
+			if(ball.ownerSnake && ball.ownerSnake.owner)
 				util.log($this.coloredName +" ate some of "+ball.ownerSnake.owner.coloredName);
-		}
+		});
 		this.snake = snake;
 	}
 }

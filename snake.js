@@ -5,7 +5,7 @@ var events = require('events');
 Snake = function Snake(length, color, pos, world) {
     events.EventEmitter.call(this);
 	this.onHeadHit = Snake.onHeadHit.bind(this);
-	
+
 	var ballSize = 10;
 	this.color = color;
 	this.balls = [];
@@ -18,8 +18,6 @@ Snake = function Snake(length, color, pos, world) {
 	this.balls.forEach(function(b) {
 		this.world.addEntity(b);
 	}, this);
-	Object.defineEvent(this, 'onDeath');
-	Object.defineEvent(this, 'onBallEaten');
 }
 util.inherits(Snake, events.EventEmitter);
 
@@ -27,7 +25,7 @@ Snake.onHeadHit = function(thing, cancel) {
 	var that = thing.ownerSnake;
 	if(that == undefined) {
 		if(this.eat(thing)) {
-			this.onBallEaten(thing, "free");
+			this.emit('eat.free', thing);
 
 			cancel(); //prevent balls interacting
 		}
@@ -35,19 +33,19 @@ Snake.onHeadHit = function(thing, cancel) {
 	else if(that != this) {
 		if(thing == that.head) {
 			if(that.length == 1 && this.head.mass > that.head.mass*2) {
+				this.emit('eat.head', thing);
 				this.eat(thing);
 				that.balls = [];
-				this.onBallEaten(thing, "head");
 				that.destroy();
-				that.onDeath(this);
+				that.emit('death', this);
 
 				cancel();
 			}
 		}
 		else if(this.canEat(thing)) {
+			this.emit('eat.tail', thing);
 			that.eatenAt(thing);
 			this.eat(thing);
-			this.onBallEaten(thing, "tail");
 
 			cancel();
 		}
