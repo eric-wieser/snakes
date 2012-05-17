@@ -1,11 +1,13 @@
+var util = require('util');
 World = function(width, height) {
+    events.EventEmitter.call(this);
 	this.entities = [];
 	this.width = width || 0;
 	this.height = height || 0;
-	Object.defineEvent(this, 'onEntityRemoved', true);
-	Object.defineEvent(this, 'onEntityAdded');
-	Object.defineEvent(this, 'onUpdated');
 }
+util.inherits(World, events.EventEmitter);
+
+
 World.prototype = {
 	update: function(dt) {
 		this.entities.forEveryPair(function(e1, e2) {
@@ -15,7 +17,7 @@ World.prototype = {
 			e.update(dt);
 			e.bounceOffWalls(this.width, this.height);
 		}, this);
-		this.onUpdated();
+		this.emit('update');
 		return this;
 	},
 	clear: function(e) {
@@ -28,12 +30,14 @@ World.prototype = {
 		e._id = i;
 
 		this.entities[i] = e;
-		this.onEntityAdded(e);
+		this.emit('entity.add', e);
 		return this;
 	},
 	removeEntity: function(e) {
-		if(e && e._id in this.entities && this.onEntityRemoved(e))
+		if(e && e._id in this.entities && this.onEntityRemoved(e)) {
+			this.emit('entity.remove', e);
 			delete this.entities[e._id];
+		}
 		return this;
 	},
 	randomPosition: function() {
