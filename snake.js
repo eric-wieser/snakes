@@ -21,13 +21,15 @@ Snake = function Snake(length, color, pos, world) {
 }
 util.inherits(Snake, events.EventEmitter);
 
-Snake.onHeadHit = function(thing, cancel) {
+Snake.onHeadHit = function(thing, cancelled) {
+	if(cancelled()) return;
+
 	var that = thing.ownerSnake;
 	if(that == undefined) {
 		if(this.eat(thing)) {
 			this.emit('eat.free', thing);
 
-			cancel(); //prevent balls interacting
+			cancelled(true); //prevent balls interacting
 		}
 	}
 	else if(that != this) {
@@ -37,9 +39,10 @@ Snake.onHeadHit = function(thing, cancel) {
 				this.eat(thing);
 				that.balls = [];
 				that.destroy();
-				that.emit('death', this);
 
-				cancel();
+				that.emit('death', this); //THIS MUST GO BEFORE.destroy()!!!
+
+				cancelled(true);
 			}
 		}
 		else if(this.canEat(thing)) {
@@ -47,7 +50,7 @@ Snake.onHeadHit = function(thing, cancel) {
 			that.eatenAt(thing);
 			this.eat(thing);
 
-			cancel();
+			cancelled(true);
 		}
 	}
 }
@@ -146,11 +149,6 @@ Snake.prototype.destroy = function() {
 	}, this);
 	this.balls = [];
 	this.head = null;
-
-	//Wipe all member functions to try and prevent problems
-	for(var p in Snake.prototype)
-		if(typeof this[p] == "function")
-			this[p] = function() {};
 }
 var balls = [];
 Snake.prototype.update = function(dt) {

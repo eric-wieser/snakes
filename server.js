@@ -141,7 +141,7 @@ updateClients = function() {
 	// 	data.s[name] = snake.balls.pluck('_id');
 	// });
 	Object.forEach(game.players, function(player, name) {
-	 	player.snake && (data.s[name] = player.snake.head._id);
+	 	player.snake  && player.snake.head && (data.s[name] = player.snake.head._id);
 	});
 
 	io.sockets.emit('entityupdates', data);

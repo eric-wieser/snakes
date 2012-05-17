@@ -12,9 +12,9 @@ util.inherits(Entity, events.EventEmitter);
 
 Entity.allowInteraction = function(a, b) {
 	var allow = true;
-	var cancel = function() { allow = false; }
-	a.emit('interaction', b, cancel)
-	b.emit('interaction', a, cancel)
+	var cancelled = function(x) { if(x) allow = false; else return !allow; }
+	a.emit('interaction', b, cancelled)
+	b.emit('interaction', a, cancelled)
 	return allow;
 }
 
