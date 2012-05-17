@@ -4,6 +4,14 @@ var events = require("events");
 Game = function Game() {
 	this.players = {};
 	this.running = false;
+
+	var lastt = +Date.now();
+	setInterval((function() {
+		var t = +Date.now();
+		var dt = (t - lastt) / 1000.0;
+		this.tick(dt);
+		lastt = t;
+	}).bind(this), 1000 / 30.0)
 }
 
 util.inherits(Game, events.EventEmitter);
@@ -68,6 +76,57 @@ Game.prototype.connectedPlayerCount = function() {
 	return Object.keys(this.players).length;
 }
 
+Game.prototype.updateClients = function() {
+	var data = {};
+	data.e = {};
+	data.s = {};
+	this.world.entities.forEach(function(e) {
+		var entityUpdate = {};
+		entityUpdate.p = e.position.toFixed(2);
+		entityUpdate.c = e.color.toInt();
+		entityUpdate.r = e.radius;
+		if(e.ownerSnake && e.ownerSnake.owner) {
+			entityUpdate.n = e.ownerSnake.owner.name;
+			if(e == e.ownerSnake.head) entityUpdate.h = true;
+		}
+
+		data.e[e._id] = entityUpdate;
+	});
+
+	Object.forEach(this.players, function(player, name) {
+	 	player.snake  && player.snake.head && (data.s[name] = player.snake.head._id);
+	});
+	Object.forEach(this.players, function(p) {
+		p.socket.volatile.emit('entityupdates', data);
+	});
+}
+
+Game.prototype.tick = function(dt) {
+	if(this.running) {		
+		Object.forEach(this.players, function(player) {
+			var snake = player.snake;
+			if(snake && snake.target) {
+				var displacement = snake.target.minus(snake.head.position);
+				var distance = displacement.length;
+				var force = Math.min(distance*5, 400)*snake.head.mass;
+
+				snake.head.forces.player = distance > 1 ?
+					displacement.timesEquals(force / distance) :
+					Vector.zero;
+			}
+		});
+		this.world.update(dt);
+		Object.forEach(this.players, function(p) {
+			try {p.snake && p.snake.update(dt); }
+			catch(e) { util.log("O shit", e, p); }
+		});
+		this.updateClients();
+	} else {
+		Object.forEach(this.players, function(p) {
+			p.socket.emit('ping');
+		});
+	}
+}
 
 //Generate the gray balls
 Game.prototype.generateBalls = function(n) {
