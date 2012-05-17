@@ -1,20 +1,3 @@
-Object.defineEvent = function(object, name, cancellable) {
-	if(cancellable) {
-		object[name] = function fire() {
-			for(var i in fire) {
-				if(fire[i].apply(object, Array.prototype.slice.call(arguments)) === false)
-					return false;
-			}
-			return true;
-		}
-	} else {
-		object[name] = function fire() {
-			for(var i in fire) {
-				fire[i].apply(object, Array.prototype.slice.call(arguments));
-			}
-		}
-	}
-}
 Object.values = function(obj) {
 	var values = [];
 	Object.forEach(obj, function(v) { values.push(v) });
