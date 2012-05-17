@@ -64,28 +64,47 @@ game.on('player.join', function(p) {
 		this.socket.emit('chat', data);
 		this.socket.broadcast.emit('chat', data);
 		util.log(this.coloredName + ": ".grey + msg)
-	}).on('death', function(type, killer) {
-		if(type == "enemy") {
-			util.log(this.coloredName + " was killed by " + killer.coloredName);
-			// var data = {n: "", c: new Color(192, 192, 192).toInt(), m: "Killed by "+ killer.name};
-			// this.socket.emit('chat', data);
-			io.sockets.emit(
-				'servermessage',
-				'<span style="color:' +killer.color.toString()+'">' + htmlEntities(killer.name) + '</span> killed ' + 
-				'<span style="color:' +this.color.toString()+'">' +	 htmlEntities(this.name) + '</span>!');
-			killer.snake && (killer.snake.maxMass *= 2);
-		}
-		else if(type == "console")
-			util.log(this.name.yellow + " eliminated");
 	});
+})
+.on('player.death', function(p, type, killer) {
+	if(type == "enemy") {
+		util.log(p.coloredName + " was killed by " + killer.coloredName);
+		// var data = {n: "", c: new Color(192, 192, 192).toInt(), m: "Killed by "+ killer.name};
+		// this.socket.emit('chat', data);
+		io.sockets.emit(
+			'servermessage',
+			'<span style="color:' +killer.color.toString()+'">' + htmlEntities(killer.name) + '</span> killed ' + 
+			'<span style="color:' +p.color.toString()+'">' +	 htmlEntities(p.name) + '</span>!');
+		killer.snake && (killer.snake.maxMass *= 2);
+	}
+	else if(type == "console")
+		util.log(this.coloredName + " eliminated");
 })
 .on('player.quit', function(p) {
 	util.log("Player ".grey + p.coloredName + " quit".grey);
+})
+.on('player.quit', function(p) {
 	//Clear the world if the player is last to leave
-	if(Object.every(this.players, function(p) {return p.snake == null})) {
+	if(Object.size(this.livingPlayers) == 0) {
 		this.reset();
 		if(this.connectedPlayerCount() >= 2)
 			this.start();
+	}
+})
+.on('player.death', function(p) {
+	//Clear the world if the player is last to leave
+	if(Object.size(this.livingPlayers) == 1 && !this.joinable()) {
+		var winner = Object.values(this.livingPlayers)[0]
+		io.sockets.emit(
+			'servermessage', '<span style="color:' +winner.color.toString()+'">' + htmlEntities(winner.name) + '</span> won!'
+		);
+		setTimeout(function() {
+			this.reset();
+			if(this.connectedPlayerCount() >= 2)
+				this.start();
+		}.bind(this), 2000);
+	} else {
+		util.log(Object.size(this.livingPlayers));
 	}
 })
 .on('start', function() {
