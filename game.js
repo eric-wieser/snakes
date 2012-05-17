@@ -3,6 +3,7 @@ var events = require("events");
 
 Game = function Game() {
 	this.players = {};
+	this.livingPlayers = {};
 	this.running = false;
 
 	var lastt = +Date.now();
@@ -19,12 +20,20 @@ Game.prototype.addPlayer = function(p) {
 	var game = this;
 
 	this.players[p.name] = p;
-	this.emit('player.join', p);
 
 	p.on('quit', function() {
 		delete game.players[this.name];
+		delete game.livingPlayers[this.name];
 		game.emit('player.quit', this);
+	}).on('spawn', function() {
+		game.livingPlayers[this.name] = this;
+		game.emit('player.spawn', this);
+	}).on('death', function(cause, killer) {
+		delete game.livingPlayers[this.name];
+		game.emit('player.death', this, cause, killer);
 	});
+
+	this.emit('player.join', p);
 }
 Game.prototype.playerByName = function(name) {
 	return this.players[name];
@@ -103,9 +112,9 @@ Game.prototype.updateClients = function() {
 
 Game.prototype.tick = function(dt) {
 	if(this.running) {		
-		Object.forEach(this.players, function(player) {
-			var snake = player.snake;
-			if(snake && snake.target) {
+		Object.forEach(this.livingPlayers, function(p) {
+			var snake = p.snake;
+			if(snake.target) {
 				var displacement = snake.target.minus(snake.head.position);
 				var distance = displacement.length;
 				var force = Math.min(distance*5, 400)*snake.head.mass;
@@ -116,9 +125,8 @@ Game.prototype.tick = function(dt) {
 			}
 		});
 		this.world.update(dt);
-		Object.forEach(this.players, function(p) {
-			try {p.snake && p.snake.update(dt); }
-			catch(e) { util.log("O shit", e, p); }
+		Object.forEach(this.livingPlayers, function(p) {
+			p.snake.update(dt);
 		});
 		this.updateClients();
 	} else {
@@ -171,8 +179,10 @@ Game.prototype.scores = function() {
 	if(!this.running) return;
 	var scores = []
 	var mass = this.world.totalMass;
-	Object.forEach(this.players, function(player, name) {
-		player.snake && scores.push([name, Math.round(1000*player.snake.mass / mass), player.snake.color.toString()])
+	Object.forEach(this.livingPlayers, function(p, name) {
+		scores.push([
+			name, Math.round(1000*p.snake.mass / mass), p.color.toString()
+		]);
 	});
 	scores.sort(function(a, b){ 
 		return a[1] > b[1] ? 1 : a[1] < b[1] ? -1 : 0;

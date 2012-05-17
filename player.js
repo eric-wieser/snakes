@@ -64,6 +64,7 @@ Player.prototype.chat = function(msg) {
 Player.prototype.spawnSnake = function(world) {
 	if(this.connected) {
 		if(this.snake) this.snake.destroy();
+		this.emit('spawn');
 
 		var $this = this;
 		var snake = new Snake(
@@ -74,14 +75,16 @@ Player.prototype.spawnSnake = function(world) {
 		);
 		snake.owner = this;
 		snake.target = snake.head.position.clone();
-		snake.on('death', function(killer) {
-			$this.snake = null;
-			$this.emit('death', 'enemy', killer.owner)
-		});
-		snake.on('eat.tail', function(ball) {
-			if(ball.ownerSnake && ball.ownerSnake.owner)
-				util.log($this.coloredName +" ate some of "+ball.ownerSnake.owner.coloredName);
-		});
+		snake
+			.on('death', function(killer) {
+				$this.snake = null;
+				$this.emit('death', 'enemy', killer.owner)
+			})
+			.on('eat.tail', function(ball) {
+				if(ball.ownerSnake && ball.ownerSnake.owner)
+					util.log($this.coloredName +" ate some of "+ball.ownerSnake.owner.coloredName);
+			});
 		this.snake = snake;
+
 	}
 }
