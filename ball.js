@@ -1,3 +1,6 @@
+require('./entity');
+require('./vector');
+require('./util');
 Ball = function Ball(pos, radius, color) {
 	Entity.call(this, pos)
 	this.radius = radius;

@@ -1,3 +1,4 @@
+require('./util');
 Snake = function Snake(length, color, pos, world) {
 	var ballSize = 10;
 	this.color = color;

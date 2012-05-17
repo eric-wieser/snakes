@@ -9,12 +9,7 @@
 		<meta property="fb:admins" content="eric.wieser"/>
 		<link rel="shortcut icon" href="/favicon.png">
 		<script src="/socket.io/socket.io.js"></script>
-		<script src="util.js"></script>
-		<script src="vector.js"></script>
-		<script src="entity.js"></script>
-		<script src="color.js"></script>
-		<script src="ball.js"></script>
-		<script src="world.js"></script>
+		<script src="browserify.js"></script>
 		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Dosis:300,600|Ubuntu" />
 		<style>
 			html, body {
@@ -264,6 +259,13 @@
 			</div>
 		</div>
 		<script>
+			var events = require('events');
+			require('./color');
+			require('./snake');
+			require('./world');
+			require('./ball');
+			require('./entity');
+
 			var colorId = Math.random();
 			var color = Color.niceColor(colorId);
 			$('.box').css({

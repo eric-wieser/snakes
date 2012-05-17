@@ -4,6 +4,7 @@ var socketio = require('socket.io');
 var readline = require('readline');
 var colors = require('colors');
 var util = require('util');
+var browserify = require('browserify');
 
 require('./util');
 require('./color');
@@ -21,6 +22,9 @@ var game = new Game();
 var app = express.createServer();
 app.listen(+process.argv[2] || 8090);
 app.use(express.static(__dirname, {maxAge: 60000}));
+app.use(browserify({
+    require : [ 'events', 'util', './color', './snake', './vector', './ball', './entity', './world' ]
+}));
 app.use(express.errorHandler());
 app.get('/', function (req, res) {
 	res.sendfile(__dirname + '/index.html');
