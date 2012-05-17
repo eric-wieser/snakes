@@ -3,7 +3,7 @@ var util = require('util');
 var events = require('events');
 
 Snake = function Snake(length, color, pos, world) {
-    events.EventEmitter.call(this);
+	events.EventEmitter.call(this);
 	this.onHeadHit = Snake.onHeadHit.bind(this);
 
 	var ballSize = 10;
@@ -40,7 +40,7 @@ Snake.onHeadHit = function(thing, cancelled) {
 				that.balls = [];
 				that.destroy();
 
-				that.emit('death', this); //THIS MUST GO BEFORE.destroy()!!!
+				that.emit('death', this);
 
 				cancelled(true);
 			}
