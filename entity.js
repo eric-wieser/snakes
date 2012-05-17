@@ -1,3 +1,5 @@
+var util = require('util');
+var events = require('events');
 
 Entity = function Entity(position, velocity) {
 	this.position = position || Vector.zero;
@@ -5,6 +7,7 @@ Entity = function Entity(position, velocity) {
 	this.forces = {};
 	this._id = -1;
 };
+util.inherits(Entity, events.EventEmitter);
 
 Object.defineProperty(Entity.prototype, 'id', {
 	get: function() { return 'e' + this._id; }

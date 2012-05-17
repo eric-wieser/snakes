@@ -1,6 +1,9 @@
 require('./entity');
 require('./vector');
 require('./util');
+
+var util = require('util');
+
 Ball = function Ball(pos, radius, color) {
 	Entity.call(this, pos)
 	this.radius = radius;
@@ -9,8 +12,7 @@ Ball = function Ball(pos, radius, color) {
 	this.forces.contact = {};
 	Object.defineEvent(this, 'onInteracted', true);
 }
-Ball.n = 0;
-Ball.prototype = new Entity;
+util.inherits(Ball, Entity);
 
 Object.defineProperty(Ball.prototype, 'mass', {
 	get: function() {
@@ -57,6 +59,14 @@ Ball.prototype.bounceOffWalls = function(width, height) {
 	}
 	return this;
 };
+
+Ball.allowInteraction = function(a, b) {
+	var allow = true;
+	var cancel = function() { allow = false; }
+	a.emit('interaction', b, cancel)
+	b.emit('interaction', a, cancel)
+	return allow;
+}
 
 Ball.prototype.interactWith = function(that) {
 	if(this.following == that || that.following == this) return false;

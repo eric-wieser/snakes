@@ -1,4 +1,7 @@
 require('./util');
+var util = require('util');
+var events = require('events');
+
 Snake = function Snake(length, color, pos, world) {
 	var ballSize = 10;
 	this.color = color;
@@ -15,6 +18,7 @@ Snake = function Snake(length, color, pos, world) {
 	Object.defineEvent(this, 'onDeath');
 	Object.defineEvent(this, 'onBallEaten');
 }
+util.inherits(Snake, events.EventEmitter);
 var onHeadHit = function(thing) {
 	var that = thing.ownerSnake;
 	if(that == undefined) {
