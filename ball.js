@@ -10,7 +10,6 @@ Ball = function Ball(pos, radius, color) {
 	this.color = color || 'red';
 
 	this.forces.contact = {};
-	Object.defineEvent(this, 'onInteracted', true);
 }
 util.inherits(Ball, Entity);
 
@@ -60,14 +59,6 @@ Ball.prototype.bounceOffWalls = function(width, height) {
 	return this;
 };
 
-Ball.allowInteraction = function(a, b) {
-	var allow = true;
-	var cancel = function() { allow = false; }
-	a.emit('interaction', b, cancel)
-	b.emit('interaction', a, cancel)
-	return allow;
-}
-
 Ball.prototype.interactWith = function(that) {
 	if(this.following == that || that.following == this) return false;
 	else {
@@ -76,7 +67,7 @@ Ball.prototype.interactWith = function(that) {
 		diff.overEquals(dist);
 
 		var overlap = this.radius + that.radius - dist;
-		if(overlap > 0 && dist != 0 && that.onInteracted(this) && this.onInteracted(that)) {
+		if(overlap > 0 && dist != 0 && Entity.allowInteraction(this, that)) {
 			var meanmass = 1 / ((1 / this.mass) + (1 / that.mass));
 
 			overlap *= meanmass;

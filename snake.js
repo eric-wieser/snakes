@@ -3,6 +3,9 @@ var util = require('util');
 var events = require('events');
 
 Snake = function Snake(length, color, pos, world) {
+    events.EventEmitter.call(this);
+	this.onHeadHit = Snake.onHeadHit.bind(this);
+	
 	var ballSize = 10;
 	this.color = color;
 	this.balls = [];
@@ -19,12 +22,14 @@ Snake = function Snake(length, color, pos, world) {
 	Object.defineEvent(this, 'onBallEaten');
 }
 util.inherits(Snake, events.EventEmitter);
-var onHeadHit = function(thing) {
+
+Snake.onHeadHit = function(thing, cancel) {
 	var that = thing.ownerSnake;
 	if(that == undefined) {
 		if(this.eat(thing)) {
 			this.onBallEaten(thing, "free");
-			return false; //prevent balls interacting
+
+			cancel(); //prevent balls interacting
 		}
 	}
 	else if(that != this) {
@@ -35,18 +40,20 @@ var onHeadHit = function(thing) {
 				this.onBallEaten(thing, "head");
 				that.destroy();
 				that.onDeath(this);
-				return false;
+
+				cancel();
 			}
 		}
 		else if(this.canEat(thing)) {
 			that.eatenAt(thing);
 			this.eat(thing);
 			this.onBallEaten(thing, "tail");
-			return false;
+
+			cancel();
 		}
 	}
-	return true;
 }
+
 Object.defineProperty(Snake.prototype, 'tail', {
 	get: function() { return this.balls[this.balls.length - 1]; }
 });
@@ -58,13 +65,13 @@ Object.defineProperty(Snake.prototype, 'head', {
 			var force = Vector.zero
 			if(current) {
 				force  = current.forces.player;
-				delete current.onInteracted.eat;
+				current.removeListener('interaction', this.onHeadHit);
 				delete current.forces.player;
 			} 
 			if(h) {
 				var snake = this;
 				h.forces.player = force
-				h.onInteracted.eat = function(x) {return onHeadHit.call(snake, x);}
+				h.on('interaction', this.onHeadHit);
 				h.ownerSnake = this;
 			}
 			this._head = h;

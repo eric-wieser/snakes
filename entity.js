@@ -2,12 +2,21 @@ var util = require('util');
 var events = require('events');
 
 Entity = function Entity(position, velocity) {
+    events.EventEmitter.call(this);
 	this.position = position || Vector.zero;
 	this.velocity = velocity || Vector.zero;
 	this.forces = {};
 	this._id = -1;
 };
 util.inherits(Entity, events.EventEmitter);
+
+Entity.allowInteraction = function(a, b) {
+	var allow = true;
+	var cancel = function() { allow = false; }
+	a.emit('interaction', b, cancel)
+	b.emit('interaction', a, cancel)
+	return allow;
+}
 
 Object.defineProperty(Entity.prototype, 'id', {
 	get: function() { return 'e' + this._id; }
