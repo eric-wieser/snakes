@@ -26,6 +26,17 @@ Array.prototype.forEveryPair = function(callback, thisPtr) {
 		}
 	}
 };
+
+Array.prototype.remove = function(element) {
+	var l = this.length;
+	for(var i = 0; i < l; i++) {
+		if(this[i] == element) {
+			this.splice(i, 1);
+			return true;
+		}
+	}
+	return false;
+}
 Object.forEach = function(obj, f, thisPtr) {
 	for(var i in obj) {
 		var oi = obj[i];
