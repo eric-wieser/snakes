@@ -29,7 +29,7 @@ Snake.onHeadHit = function(thing, cancelled) {
 		if(this.eat(thing)) {
 			this.emit('eat.free', thing);
 
-			cancelled("FREE"); //prevent balls interacting
+			cancelled(true); //prevent balls interacting
 		}
 	}
 	else if(that != this) {
@@ -42,7 +42,7 @@ Snake.onHeadHit = function(thing, cancelled) {
 
 				that.emit('death', this);
 
-				cancelled("DEATH");
+				cancelled(true);
 			}
 		}
 		else if(this.canEat(thing)) {
@@ -50,7 +50,7 @@ Snake.onHeadHit = function(thing, cancelled) {
 			that.eatenAt(thing);
 			this.eat(thing);
 
-			cancelled("TAIL");
+			cancelled(true);
 		}
 	}
 }
