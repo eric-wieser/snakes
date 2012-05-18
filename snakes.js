@@ -165,6 +165,7 @@ var controlStyle = "absolute";
 $(window).keydown(function(e) {
 	snakes.forEach(function(s) {
 		var h = s.head;
+		if(!h) return;
 		if(!("player" in h.forces)) h.forces.player = Vector.zero
 		var a = 400* h.mass;
 		if(controlStyle == "absolute") {
@@ -177,6 +178,7 @@ $(window).keydown(function(e) {
 }).keyup(function(e) {
 	snakes.forEach(function(s) {
 		var h = s.head;
+		if(!h) return;
 		if(!("player" in h.forces)) h.forces.player = Vector.zero
 
 		if(controlStyle == "absolute") {
