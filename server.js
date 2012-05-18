@@ -20,14 +20,21 @@ require('./game');
 var game = new Game();
 
 var app = express.createServer();
-app.listen(+process.argv[2] || 8090);
-app.use(express.static(__dirname, {maxAge: 60000}));
-app.use(browserify({
-    require : [ 'events', 'util', './color', './snake', './vector', './ball', './entity', './world' ]
-}));
-app.use(express.errorHandler());
+var port = +process.argv[2] || 8090;
+app.listen(port);
+
+app.configure(function() {
+	app.use(express.static(__dirname, {maxAge: 60000}));
+	app.use(browserify({
+		require : [ 'events', 'util', './color', './snake', './vector', './ball', './entity', './world' ]
+	}));
+	app.set('view options', { layout: false });
+	app.set('view engine', 'ejs');
+	app.use(express.errorHandler());
+});
 app.get('/', function (req, res) {
-	res.sendfile(__dirname + '/index.html');
+	res.render(__dirname + '/index', {port: port});
+	//res.sendfile(__dirname + '/index.html');
 });
 app.get('/local', function (req, res) {
 	res.sendfile(__dirname + '/snakes.html');

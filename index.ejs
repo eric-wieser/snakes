@@ -325,8 +325,8 @@
 
 			
 
-			//var socket = io.connect('http://42nd.org:8090');
-			var socket = io.connect('http://42nd.org:8090');
+			var socket = io.connect(':<%- port %>');
+			//var socket = io.connect('/');
 			var name;
 			var head;
 			var heads;
