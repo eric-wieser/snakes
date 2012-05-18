@@ -82,7 +82,7 @@ game.on('player.join', function(p) {
 			'servermessage',
 			'<span style="color:' +killer.color.toString()+'">' + htmlEntities(killer.name) + '</span> killed ' + 
 			'<span style="color:' +p.color.toString()+'">' +	 htmlEntities(p.name) + '</span>!');
-		killer.snake && (killer.snake.maxMass *= 2);
+		killer.snake && (killer.snake.maxMass *= 1.5);
 	}
 	else if(type == "console")
 		util.log(this.coloredName + " eliminated");
