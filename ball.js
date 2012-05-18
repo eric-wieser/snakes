@@ -60,7 +60,7 @@ Ball.prototype.bounceOffWalls = function(width, height) {
 };
 
 Ball.prototype.interactWith = function(that) {
-	if(this.following == that || that.following == this) return false;
+	if(this.following == that || that.following == this) { return false; } 
 	else {
 		var diff = this.position.minus(that.position);
 		var dist = diff.length;
@@ -84,6 +84,15 @@ Ball.prototype.clearForces = function() {
 	Entity.prototype.clearForces.call(this);
 	this.forces.contact = {};
 	this.forces.following = {};
+
+	if(this.following) {
+		delete this.following.followedBy;
+		delete this.following;
+	}
+	if(this.followedBy) {
+		delete this.followedBy.following;
+		delete this.followedBy;
+	}
 }
 
 Ball.prototype.drawTo = function(ctx) {
@@ -97,7 +106,8 @@ Ball.prototype.drawTo = function(ctx) {
 };
 
 Ball.prototype.follow = function(that) {
-	this.following = that
+	this.following = that;
+	that.followedBy = this;
 
 	target = this.position.minus(that.position)
 		.normalize()

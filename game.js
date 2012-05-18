@@ -95,8 +95,8 @@ Game.prototype.updateClients = function() {
 		entityUpdate.c = e.color.toInt();
 		entityUpdate.r = e.radius;
 		if(e.ownerSnake && e.ownerSnake.owner) {
-			entityUpdate.n = e.ownerSnake.owner.name;
-			if(e == e.ownerSnake.head) entityUpdate.h = true;
+			//entityUpdate.n = e.ownerSnake.owner.name;
+			//if(e == e.ownerSnake.head) entityUpdate.h = true;
 		}
 
 		data.e[e._id] = entityUpdate;
