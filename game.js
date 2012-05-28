@@ -129,11 +129,12 @@ Game.prototype.tick = function(dt) {
 			p.snake.update(dt);
 		});
 		this.updateClients();
-	} else {
+	} else if(this.ticks % 25 == 0) {
 		Object.forEach(this.players, function(p) {
 			p.socket.emit('ping');
 		});
 	}
+	this.ticks++;
 }
 
 //Generate the gray balls
@@ -162,6 +163,7 @@ Game.prototype.start = function() {
 		p.spawnSnake(this.world);
 	}, this);
 	this.generateBalls(50);
+	this.ticks = 0;
 	this.emit('start');
 }
 
