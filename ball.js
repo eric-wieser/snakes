@@ -28,10 +28,9 @@ Object.defineProperty(Ball.prototype, 'id', {
 Ball.prototype.update = function(dt) {
 	//resistance = k * A * v^2
 	this.forces.resistance = this.velocity.times(0.05*-this.velocity.length*this.radius*2);
-	
 	Entity.prototype.update.call(this, dt);
-	this.forces.contact = {};
-	this.forces.following = {};
+	
+	this.clearForces();
 
 	return this;
 };
