@@ -87,9 +87,9 @@ Object.defineProperty(Snake.prototype, 'length', {
 });
 Snake.prototype.drawTo = function(ctx) {
 	ctx.save();
-	ctx.fillStyle = "white";
+	ctx.fillStyle = (this.color.r + this.color.g + this.color.b > 192*3 ? "black" : "white");
 	ctx.beginPath();
-	ctx.arc(this.head.position.x, this.head.position.y, 5, 0, Math.PI * 2, false);
+	ctx.arc(this.head.position.x, this.head.position.y, this.head.radius / 2, 0, Math.PI * 2, false);
 	ctx.fill();
 	ctx.restore();
 	return this;

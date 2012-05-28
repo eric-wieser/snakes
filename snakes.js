@@ -83,19 +83,8 @@ var keycodes = {
 };
 var snakes = [];
 
-//Generate the gray balls
-for(var i = 0; i <= 50; i++) {
-	var r = Math.random();
-	var color, radius;
+var n = 50;
 
-	if     (r < 0.33) color = new Color(192, 192, 192), radius = randomInt(5,  10);
-	else if(r < 0.66) color = new Color(128, 128, 128), radius = randomInt(10, 20);
-	else              color = new Color( 64,  64,  64), radius = randomInt(20, 40);
-
-	universe.addEntity(
-		new Ball(universe.randomPosition(), radius, color)
-	);
-}
 
 //Add the two snakes
 
@@ -110,12 +99,14 @@ if(location.search == '?4') {
 	snakes[3].controls = keycodes.hjkl
 }
 else if(location.search == '?3') {
-	snakes[0] = new Snake(10, new Color(255, 128, 0), new Vector(  universe.width/3,   universe.height / 3), universe);
-	snakes[0].controls = keycodes.wasd
 	snakes[1] = new Snake(10, new Color(0, 255, 128), new Vector(2*universe.width/3,   universe.height / 3), universe);
 	snakes[1].controls = keycodes.arrows
 	snakes[2] = new Snake(10, new Color(128, 0, 255), new Vector(  universe.width/2, 2*universe.height / 3), universe);
 	snakes[2].controls = keycodes.numpad
+}
+else if(location.search == '?1') {
+	snakes[0] = new Snake(10, new Color(255, 128, 0), new Vector(  universe.width/3,   universe.height / 3), universe);
+	snakes[0].controls = keycodes.wasd
 }
 else {
 	snakes[0] = new Snake(10, new Color(255, 128, 0), new Vector(  universe.width/3,   universe.height / 2), universe);
@@ -124,6 +115,19 @@ else {
 	snakes[1].controls = keycodes.arrows
 }
 
+//Generate the gray balls
+for(var i = 0; i <= n; i++) {
+	var r = Math.random();
+	var color, radius;
+
+	if  (r < 0.33) color = new Color(192, 192, 192), radius = randomInt(5,  10);
+	else if(r < 0.66) color = new Color(128, 128, 128), radius = randomInt(10, 20);
+	else              color = new Color( 64,  64,  64), radius = randomInt(20, 40);
+
+	universe.addEntity(
+		new Ball(universe.randomPosition(), radius, color)
+	);
+}
 
 //Queue animation frames
 var lastt = Date.now();
@@ -143,13 +147,15 @@ function draw(t) {
 	//ctx.clearRect(0, 0, width, height);
 	ctx.globalCompositeOperation = "source-over";
 	ctx.fillStyle = "black";
-	ctx.fillRect(0, 0, universe.width, universe.height);
+	//ctx.fillRect(0, 0, universe.width, universe.height);
+	ctx.clearRect(0, 0, universe.width, universe.height);
 
 	//draw all the things
 	ctx.globalCompositeOperation = "lighter";
 	universe.entities.forEach(function(ball) {
 		ball.drawTo(ctx);
 	});
+	ctx.globalCompositeOperation = "source-over";
 	snakes.forEach(function(snake) {
 		snake.drawTo(ctx);
 	});
