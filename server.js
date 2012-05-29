@@ -52,18 +52,26 @@ io.configure('development', function() {
 
 io.sockets.on('connection', game.playerListener());
 
-game.on('player.join', function(p) {
+game.on('start', function() {
+	io.sockets.emit('servermessage', "New game started!");
+})
+.on('player.join', function(p) {
 	util.log("Player ".grey + p.coloredName + " joined".grey);
 
-	if(this.running) {
+	if(this.connectedPlayerCount() == 2) {
+		//just left practice mode
+		this.reset();
+		this.start();
+	} else if(this.running) {
+		//game is already running
 		if(this.joinable())
 			p.spawnSnake(game.world);
 		else
 			p.socket.emit('servermessage', 'You\'ll have to wait for the next game');
-	} else if(this.connectedPlayerCount() >= 2) {
-		this.start();
 	} else {
-		p.socket.emit('servermessage', 'Waiting for more players');
+		//start practice mode
+		this.start();
+		p.socket.emit('servermessage', 'Practice mode - Waiting for more players');
 	}
 
 	p.on('chat', function(msg) {	
@@ -113,9 +121,6 @@ game.on('player.join', function(p) {
 	} else {
 		util.log(Object.size(this.livingPlayers));
 	}
-})
-.on('start', function() {
-	io.sockets.emit('servermessage', "New game started!");
 })
 
 setInterval(function() {
