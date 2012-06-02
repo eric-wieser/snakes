@@ -1,4 +1,10 @@
 "use strict"; 
+require('./snake');
+require('./explosion');
+require('./color');
+require('./vector');
+require('./world');
+require('./ball');
 
 Array.prototype.contains = function(x) { return this.indexOf(x) != -1; }
 
@@ -82,9 +88,14 @@ var keycodes = {
 	}
 };
 var snakes = [];
+var explosions = [];
 
 var n = 50;
 
+function makeExplosion(at) {
+	var e = new Explosion(at.position);
+	explosions.push(e);
+}
 
 //Add the two snakes
 
@@ -115,6 +126,12 @@ else {
 	snakes[1].controls = keycodes.arrows
 }
 
+snakes.forEach(function(s) {
+	s.on('eat.tail', makeExplosion);
+	s.on('eat.free', makeExplosion);
+	s.on('eat.head', makeExplosion);
+})
+
 //Generate the gray balls
 for(var i = 0; i <= n; i++) {
 	var r = Math.random();
@@ -138,9 +155,15 @@ function draw(t) {
 	if(dt > 0.2) dt = 0.2;
 
 	//Update physics of all the balls and snakes
+	snakes.forEach(function(snake) {
+		snake.head && snake.playerForce && (snake.head.forces.player = snake.playerForce.times(snake.head.mass));
+	});
 	universe.update(dt);
 	snakes.forEach(function(snake) {
 		snake.update(dt);
+	});
+	explosions.forEach(function(e) {
+		e.update(dt);
 	});
 
 	//draw the black background
@@ -151,6 +174,10 @@ function draw(t) {
 	ctx.clearRect(0, 0, universe.width, universe.height);
 
 	//draw all the things
+	explosions.forEach(function(e) {
+		e.bounceWithin(universe.width, universe.height);
+		e.drawTo(ctx);
+	});
 	ctx.globalCompositeOperation = "lighter";
 	universe.entities.forEach(function(ball) {
 		ball.drawTo(ctx);
@@ -170,28 +197,24 @@ requestAnimationFrame(draw);
 var controlStyle = "absolute";
 $(window).keydown(function(e) {
 	snakes.forEach(function(s) {
-		var h = s.head;
-		if(!h) return;
-		if(!("player" in h.forces)) h.forces.player = Vector.zero
-		var a = 400* h.mass;
+		s.playerForce = s.playerForce || Vector.zero;
+		var a = 400;
 		if(controlStyle == "absolute") {
-			if(s.controls.up    == e.which) h.forces.player.y = -a;
-			if(s.controls.down  == e.which) h.forces.player.y = a;
-			if(s.controls.left  == e.which) h.forces.player.x = -a;
-			if(s.controls.right == e.which) h.forces.player.x = a;
+			if(s.controls.up    == e.which) s.playerForce.y = -a;
+			if(s.controls.down  == e.which) s.playerForce.y = a;
+			if(s.controls.left  == e.which) s.playerForce.x = -a;
+			if(s.controls.right == e.which) s.playerForce.x = a;
 		}
 	});
 }).keyup(function(e) {
 	snakes.forEach(function(s) {
-		var h = s.head;
-		if(!h) return;
-		if(!("player" in h.forces)) h.forces.player = Vector.zero
+		s.playerForce = s.playerForce || Vector.zero;
 
 		if(controlStyle == "absolute") {
-			if(s.controls.up    == e.which) h.forces.player.y = 0;
-			if(s.controls.down  == e.which) h.forces.player.y = 0;
-			if(s.controls.left  == e.which) h.forces.player.x = 0;
-			if(s.controls.right == e.which) h.forces.player.x = 0;
+			if(s.controls.up    == e.which) s.playerForce .y = 0;
+			if(s.controls.down  == e.which) s.playerForce .y = 0;
+			if(s.controls.left  == e.which) s.playerForce .x = 0;
+			if(s.controls.right == e.which) s.playerForce .x = 0;
 		}
 	});
 })
