@@ -130,6 +130,7 @@ snakes.forEach(function(s) {
 	s.on('eat.tail', makeExplosion);
 	s.on('eat.free', makeExplosion);
 	s.on('eat.head', makeExplosion);
+	s.on('death', function() { snakes.remove(this); });
 })
 
 //Generate the gray balls
