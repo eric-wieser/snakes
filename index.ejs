@@ -1,7 +1,7 @@
 <!doctype html>
 <html xmlns:og="http://opengraphprotocol.org/schema/">
 	<head>
-		<meta property="og:title" content="Snakes - A multiplayer game written in javascript using the HTML5 canvas, node.js, and Socket.IO"/>
+		<meta property="og:title" content="[Name TBC] - A multiplayer game written in javascript using the HTML5 canvas, node.js, and Socket.IO"/>
 		<meta property="og:type" content="website"/>
 		<meta property="og:url" content="http://snakes.eric-wieser.tk/"/>
 		<meta property="og:description" content="A game for two (or more) players. Control the snakes with the arrow keys and WASD. Eat or be eaten!"/>
@@ -195,7 +195,7 @@
 			}
 		</style>
 
-		<title>Snakes - A multiplayer game written in javascript using the HTML5 canvas, node.js, and Socket.IO</title>
+		<title>[Name TBC] - A multiplayer game written in javascript using the HTML5 canvas, node.js, and Socket.IO</title>
 		<script type="text/javascript">
 		var _gaq = _gaq || [];
 		_gaq.push(['_setAccount', 'UA-24953524-2']);
@@ -232,7 +232,7 @@
 		<div id="login" class="vertical-center">
 			<div>
 				<div class="box">
-					<h1>Snakes</h2>
+					<h1>[Name TBC]</h2>
 					<p>Control the snake by moving the mouse - no clicking required. Eat other snakes, or be eaten. <a href="#" id="about-link">About</a>.</p>
 					<form id="join">
 						<button type="submit">Join the game</button>
@@ -245,14 +245,14 @@
 		<div id="about" class="vertical-center" style="display: none">
 			<div>
 				<div class="box">
-					<h1>About Snakes</h1>
-					<p>Snakes started off as a simple physics engine, with just balls bouncing off each other and the edges of the screen. Then a form of magnetic attraction was simulated. Interestingly, the balls naturally formed into wriggling snake shapes. A couple more tweaks, and a set of balls followed the player. It began to become apparent that there was a potential for a game here. Add a second player, a scoring system, and the ability to eat other balls, and you have a single computer, keyboard-mashing game. You can still play a <a href="/local">2 player</a>, <a href="/local?3">3 player</a>, or even <a href="/local?4">4 player</a> version of the single-computer version.</p>
+					<h1>About [Name TBC]</h1>
+					<p>[Name TBC] started off as a simple physics engine, with just balls bouncing off each other and the edges of the screen. Then a form of magnetic attraction was simulated. Interestingly, the balls naturally formed into wriggling snake shapes. A couple more tweaks, and a set of balls followed the player. It began to become apparent that there was a potential for a game here. Add a second player, a scoring system, and the ability to eat other balls, and you have a single computer, keyboard-mashing game. You can still play a <a href="/local">2 player</a>, <a href="/local?3">3 player</a>, or even <a href="/local?4">4 player</a> version of the single-computer version.</p>
 
 					<h2>Networking</h2>
-					<p>Snakes needed improving. The controls were terrible, the arena too small, and most keyboards couldn't cope with the strain of 4 users each hammering arrow keys. It needed to go networked. Node.js was the answer, along with Socket.IO. This was an exercise in learning new technologies, and seeing where they led to. </p>
+					<p>[Name TBC] needed improving. The controls were terrible, the arena too small, and most keyboards couldn't cope with the strain of 4 users each hammering arrow keys. It needed to go networked. Node.js was the answer, along with Socket.IO. This was an exercise in learning new technologies, and seeing where they led to. </p>
 
 					<h2>Created by <a href="http://eric-wieser.tk/">Eric Wieser</a></h2>
-					<p>With thanks to Max Sinclair for allowing a core of his webserver to be devoted to Snakes, Luke Suess and Jonathan Laver for game inspiration along the way, and numerous friends for playing, testing, and hacking the game so that it could be improved.</p>
+					<p>With thanks to Max Sinclair for allowing a core of his webserver to be devoted to [Name TBC], Luke Suess and Jonathan Laver for game inspiration along the way, and numerous friends for playing, testing, and hacking the game so that it could be improved.</p>
 					<p>The inspiration to go networked came from Rob Hawkes' <a href="http://rawkets.com">Rawkets</a></p>
 					<p>Browse the source code <a href="http://github.com/eric-wieser/snakes">on github</a>
 				</div>
@@ -281,6 +281,26 @@
 			$('#about .box').click(function(e) {
 				e.stopPropagation();
 			});
+			if(location.search == "?music") (function(){
+				//Do music!
+				var clientId = "dd250c3d9ef318565e6f22e871b87fb8";
+				var musicUrl = "http://soundcloud.com/alex-nicholls/snakes-theme";
+				$.getJSON(
+					'http://api.soundcloud.com/resolve.json?callback=?', {
+						url: musicUrl,
+						client_id: clientId
+					}, function(data) {
+						if(data.streamable && data.stream_url) {
+							var music = new Audio();
+							music.src = data.stream_url+'?client_id='+clientId;
+							music.loop = true;
+							music.play();
+						}
+					}
+				);
+			})();
+
+
 			//Show and hide the about box
 			$('#about-link').click(function() {
 				$('#login')
