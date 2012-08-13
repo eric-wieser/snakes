@@ -5,8 +5,9 @@ var readline = require('readline');
 var colors = require('colors');
 var util = require('util');
 var browserify = require('browserify');
-var faceplate = require('faceplate');
 var fs = require('fs');
+var cookie = require('cookie');
+var facebook = require('./facebook');
 
 require('./util');
 require('./color');
@@ -32,15 +33,17 @@ var io = socketio.listen(app);
 io.configure('development', function() {
 	io.set('log level', 1);
 	io.set('close timeout', 2.5);
-})
-
+});
 
 var gameManager = new GameManager(io);
 io.sockets.on('connection', gameManager.playerListener());
 
-
 app.configure(function() {
 	app.use(express.static(__dirname + '/public', {maxAge: 60000}));
+	app.use(express.bodyParser());
+	app.use(express.cookieParser());
+	app.use(express.session({ secret: process.env.SESSION_SECRET || 'secret123' }));
+	app.use(facebook.middleware);
 	app.use(browserify({
 		require : [
 			'events',
@@ -55,14 +58,10 @@ app.configure(function() {
 		],
 		cache: './.browserify-cache.json'
 	}));
+	app.use(express.errorHandler({ dump: true, stack: true }));
 	console.log(process.env.FACEBOOK_APP_ID, process.env.FACEBOOK_SECRET);
-	/*app.use(faceplate.middleware({
-		app_id: process.env.FACEBOOK_APP_ID,
-		secret: process.env.FACEBOOK_SECRET
-	}));*/
 	app.set('view options', { layout: false });
 	app.set('view engine', 'ejs');
-	app.use(express.errorHandler());
 });
 app.get('/games/:id/log', function (req, res) {
 	fs.readFile('logs/'+ req.params.id, 'utf8', function (err, data) {
@@ -97,6 +96,44 @@ app.get('/log', function (req, res) {
 	});
 });
 
+app.dynamicHelpers({
+  'host': function(req, res) {
+    return req.headers['host'];
+  },
+  'scheme': function(req, res) {
+    return req.headers['x-forwarded-proto'] || 'http';
+  },
+  'url': function(req, res) {
+    return function(path) {
+      return app.dynamicViewHelpers.scheme(req, res) + app.dynamicViewHelpers.url_no_scheme(req, res)(path);
+    }
+  },
+  'url_no_scheme': function(req, res) {
+    return function(path) {
+      return '://' + app.dynamicViewHelpers.host(req, res) + (path || '');
+    }
+  },
+});
+
+app.get('/fblogin', function(req, res) {
+	console.log(req.headers['host']);
+	req.facebook.app(function(app) {
+		console.log(app);
+		req.facebook.me(function(user) {
+			res.render(__dirname + '/fb', {
+				req:       req,
+				app:       app,
+				user:      user
+			});
+		});
+	});
+});
+app.get('/whoami', function(req, res) {
+	req.facebook.me(function(user) {
+		res.send("Got back sdfkjs;dfkjs;dlfkjs;ldfkjs;ldkfjs;ldkfjs;ldkfjs;ldjfs;lkfj;sdlkfjs;lkdjf;slkdf;skfd: " + user);
+	});
+	console.log(req.headers);
+});
 function htmlEntities(str) {
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }

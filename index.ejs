@@ -28,6 +28,32 @@
 		</script>
 	</head>
 	<body>
+		<div id="fb-root"></div>
+		<script type="text/javascript">
+			window.fbAsyncInit = function() {
+				FB.init({
+					appId      : 258769527571740,//'<%= app.id %>', // App ID
+					//channelUrl : '<%= url_no_scheme('/channel.html') %>', // Channel File
+					status     : true, // check login status
+					cookie     : true, // enable cookies to allow the server to access the session
+					xfbml      : true // parse XFBML
+				});
+
+				// Listen to the auth.login which will be called when the user logs in
+				// using the Login button
+				FB.Event.subscribe('auth.login', function(response) {
+					// We want to reload the page now so PHP can read the cookie that the
+					// Javascript SDK sat. But we don't want to use
+					// window.location.reload() because if this is in a canvas there was a
+					// post made to this page and a reload will trigger a message to the
+					// user asking if they want to send data again.
+					window.location = window.location;
+				});
+			};
+
+			// Load the SDK Asynchronously
+			$.getScript("//connect.facebook.net/en_US/all.js");
+		</script>
 		<div id="wrapper"><canvas id="canvas">If you can see this, your browser sucks</canvas></div>
 		<div id="top">
 			<div id="message"></div>
@@ -57,6 +83,7 @@
 						<input id="name" placeholder="Enter your name here" autocomplete="off" autofocus="autofocus" />
 					</form>
 					<small>Type your name above, and press Enter to join the game</small>
+					<fb:login-button>log in with facebook</fb:login-button>
 				</div>
 			</div>
 		</div>
@@ -207,8 +234,14 @@
 
 			$('#login').hide();
 			socket.on('connect', function() {
-				socket.emit('room', gameName, function() {
-					$('#login').show();
+				socket.emit('room', gameName, function(user) {
+					//It knows who we are
+					if(user) {
+						name = user.name;
+						playing = true;
+						requestAnimationFrame(draw);
+					}
+					else $('#login').show();
 				});
 			});
 			$('#join').submit(function() {

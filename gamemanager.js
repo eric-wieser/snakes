@@ -1,5 +1,6 @@
 var util = require('util');
 var events = require("events");
+var facebook = require("./facebook");
 
 
 function htmlEntities(str) {
@@ -106,16 +107,33 @@ GameManager.prototype.createGame = function(name) {
 GameManager.prototype.playerListener = function() {
 	var gm = this;
 	return function(socket) {
+		var player;
 		var gotResponse = false;
 		var gameName;
 		var game;
+
 		socket.on('room', function(name, fn) {
 			gameName = name;
 			game = gm.getGame(gameName);
-			(game || console).log('User is watching '+gameName);
 			socket.join(gameName);
-			fn();
+
+			facebook.getAPI(socket, function(api) {
+				console.log("Retrieved fb info")
+				api.me(function(user) {
+					fn(user);
+					if(user) {
+						console.log("User is "+user.name)
+						player = new Player(socket, user.name, Color.niceColor(Math.random()));
+
+						game = game || gm.createGame(gameName);
+
+						game.addPlayer(player);
+						gotResponse = true;
+					}
+				});
+			});
 		});
+
 		socket.on('join', function(data, callback) {
 			if(!gameName) { console.log('...'); return; }
 			//Already had a player join from this socket
@@ -131,18 +149,20 @@ GameManager.prototype.playerListener = function() {
 				callback({error: "Name length invalid"});
 			}
 
+			player = new Player(socket, name, Color.niceColor(data.color));
+
 			if(!game) {
 				game = gm.createGame(gameName);
 
 				gotResponse = true;
 				callback(true);
-				game.addPlayer(new Player(socket, name, Color.niceColor(data.color)));
+				game.addPlayer(player);
 
 			}
 			else if(!game.playerByName(name)) {
 				gotResponse = true;
 				callback(true);
-				game.addPlayer(new Player(socket, name, Color.niceColor(data.color)));
+				game.addPlayer(player);
 			}
 			else {
 				callback({error: "Someone else has that name"});
