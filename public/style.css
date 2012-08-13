@@ -79,8 +79,8 @@ a {
 	text-decoration: none;
 }
 .box {
-	border-top: 5px solid;
-	border-bottom: 5px solid;
+	border-top: 5px solid #ff8000;
+	border-bottom: 5px solid #ff8000;
 	/*box-shadow: 0 0 25px #404040;*/
 	overflow: hidden;
 	background: rgba(64, 64, 64, 0.5);
@@ -89,7 +89,7 @@ a {
 #login .box{
 	width: 400px;
 }
-#login input{
+.one-box-form input{
 	width: 100%;
 	box-sizing: border-box;
 	margin: 0;
@@ -101,12 +101,17 @@ a {
 	font-size: 40px;
 	border: none;
 	text-align: center;
-		outline: none;
-		background-color: transparent;
+	outline: none;
+	background-color: transparent;
+	color: #ff8000;
 }
-#login button {
+.one-box-form button {
 	display: none;
 }
+#games .box {
+	width: 400px;
+}
+
 #about .box{
 	width: 80%;
 }

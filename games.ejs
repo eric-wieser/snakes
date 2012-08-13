@@ -1,0 +1,46 @@
+<!doctype html>
+<html xmlns:og="http://opengraphprotocol.org/schema/">
+	<head>
+		<meta property="og:title" content="<%= gameName %> - A multiplayer game written in javascript using the HTML5 canvas, node.js, and Socket.IO"/>
+		<meta property="og:type" content="website"/>
+		<meta property="og:url" content="http://snakes.eric-wieser.tk/"/>
+		<meta property="og:description" content="A game for two (or more) players. Control the snakes with the arrow keys and WASD. Eat or be eaten!"/>
+		<meta property="og:image" content="http://eric-wieser.tk/images/snaps/snakes.png" />
+		<meta property="fb:admins" content="eric.wieser"/>
+		<link rel="shortcut icon" href="/favicon.png">
+		<link rel="stylesheet" href="/style.css">
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Dosis:300,600|Ubuntu" />
+
+		<title><%= gameName %> - A multiplayer game written in javascript using the HTML5 canvas, node.js, and Socket.IO</title>
+	</head>
+	<body>
+		<div id="games" class="vertical-center">
+			<div>
+				<div class="box">
+					<h1><%= gameName %> - game list</h1>
+					<ul class="games">
+						<% games.forEach(function(game) { %><li>
+							<a href="/games/<%= game.name %>"><%= game.name %></a>
+							<% if(game.connectedPlayerCount() > 0) {
+							%><ul class="players">
+								<% for(var name in game.players) {
+								%><li>
+									<%= name %>
+								</li><% } %>
+							</ul><% 
+							} else { %>
+								No players online
+							<% } %>
+						</li><% }); %>
+					</ul>
+					<form id="new" class="one-box-form">
+						<button type="submit">Create a game</button>
+						<input id="name" placeholder="New game" autocomplete="off" autofocus="autofocus" />
+					</form>
+					<script>$('#new').submit(function() { location.pathname = 'games/' + $('#name').val(); return false; });</script>
+					<small>Type a name for your room above, and press Enter</small>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>

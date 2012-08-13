@@ -64,9 +64,21 @@ app.configure(function() {
 	app.set('view engine', 'ejs');
 	app.use(express.errorHandler());
 });
+app.get('/games/:id/log', function (req, res) {
+	fs.readFile('logs/'+ req.params.id, 'utf8', function (err, data) {
+		if(!err)
+			res.send(data.replace(/\u001B\[[^m]+m/g, '').split('\n').join('\<br />'));
+		else {
+			res.status(404);
+			res.send('log not found')
+		}
+	});
+});
 app.get('/games/:id', function (req, res) {
 	res.render(__dirname + '/index', {port: port, room: req.params.id, gameName: 'Snake or Break'});
-	//res.sendfile(__dirname + '/index.html');
+});
+app.get('/games', function (req, res) {
+	res.render(__dirname + '/games', {games: gameManager.games, gameName: 'Snake or Break'});
 });
 app.get('/', function (req, res) {
 	res.render(__dirname + '/index', {port: port, room: gameManager.defaultGame.name, gameName: 'Snake or Break'});
