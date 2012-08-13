@@ -224,6 +224,7 @@
 					}, function(data) {
 						if(data === true) {
 							localStorage['name'] = name = n;
+							requestAnimationFrame(draw);
 							$('#login').fadeOut(function() {
 								isTrying = false;
 								playing = true;
@@ -271,8 +272,14 @@
 					var mostLeft = 0;
 					var mostRight = 0;
 
+					//Expand to an objects - data sent as array to save space
+					scores = scores.map(function(score) {
+						return { name: score[0], value: score[1], color: score[2] };
+					});
+
+
+
 					scores.forEach(function(score, i) {
-						score = { name: score[0], value: score[1], color: score[2] };
 						//Add names to scoreboard
 						$('<li />').append(
 							$('<span class="name"/>').text(score.name), " ", 
@@ -430,7 +437,6 @@
 				ctx.restore();
 				requestAnimationFrame(draw);
 			}
-			requestAnimationFrame(draw);
 		</script>
 	</body>
 </html>
