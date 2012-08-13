@@ -5,6 +5,8 @@ var readline = require('readline');
 var colors = require('colors');
 var util = require('util');
 var browserify = require('browserify');
+var faceplate = require('faceplate');
+var fs = require('fs');
 
 require('./util');
 require('./color');
@@ -19,7 +21,10 @@ require('./game');
 
 var game = new Game();
 
-var app = express.createServer();
+var app = express.createServer(/*{
+    key: fs.readFileSync('ssl/privatekey.pem'),
+    cert: fs.readFileSync('ssl/certificate.pem')
+}*/);
 var port = +process.argv[2] || 8090;
 app.listen(port);
 
@@ -39,6 +44,11 @@ app.configure(function() {
 		],
 		cache: './.browserify-cache.json'
 	}));
+	console.log(process.env.FACEBOOK_APP_ID, process.env.FACEBOOK_SECRET);
+	/*app.use(faceplate.middleware({
+		app_id: process.env.FACEBOOK_APP_ID,
+		secret: process.env.FACEBOOK_SECRET
+	}));*/
 	app.set('view options', { layout: false });
 	app.set('view engine', 'ejs');
 	app.use(express.errorHandler());
@@ -49,6 +59,15 @@ app.get('/', function (req, res) {
 });
 app.get('/local', function (req, res) {
 	res.sendfile(__dirname + '/snakes.html');
+});
+app.get('/log', function (req, res) {
+	fs.readFile('game.log', 'utf8', function (err, data) {
+		res.send(
+			data
+				.replace(/\u001B\[[^m]+m/g, '')
+				.split('\n').join('\<br />')
+		);
+	});
 });
 
 function htmlEntities(str) {
@@ -91,6 +110,8 @@ game.on('start', function() {
 		this.socket.broadcast.emit('chat', data);
 		util.log(this.coloredName + ": ".grey + msg)
 	});
+
+	util.log(this.connectedPlayerCount().toString().white + " players connected".grey);
 })
 .on('player.death', function(p, type, killer) {
 	if(type == "enemy") {
@@ -108,6 +129,7 @@ game.on('start', function() {
 })
 .on('player.quit', function(p) {
 	util.log("Player ".grey + p.coloredName + " quit".grey);
+	util.log(this.connectedPlayerCount().toString().white + " players connected".grey);
 })
 .on('player.quit', function(p) {
 	//Clear the world if the player is last to leave
@@ -139,6 +161,7 @@ setInterval(function() {
 }, 500);
 
 (function makeCLI() {
+	var logfile = fs.createWriteStream('game.log', {flags: 'a+'});
 
 	//Create a command line interface from the console
 	var cli = readline.createInterface(
@@ -176,7 +199,9 @@ setInterval(function() {
 		var newStdout = Object.create(process.stdout);
 		newStdout.write = function() {
 			cli.output.write('\x1b[2K\r');
-			var result = oldWrite.apply(this, Array.prototype.slice.call(arguments));
+			var args = Array.prototype.slice.call(arguments);
+			var result = oldWrite.apply(this, args);
+			logfile.write(args);
 			cli._refreshLine();
 			return result;
 		}
