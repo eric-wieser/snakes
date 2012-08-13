@@ -86,3 +86,23 @@ Object.isEmpty = function(obj) {
 	for (var prop in obj) if (obj.hasOwnProperty(prop)) return false;
 	return true;
 };
+
+function pad(n) {
+  return n < 10 ? '0' + n.toString(10) : n.toString(10);
+}
+
+var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep',
+              'Oct', 'Nov', 'Dec'];
+
+// 26 Feb 16:19:34
+Date.prototype.timestamp = function() {
+	return [
+		this.getDate(),
+		months[this.getMonth()],
+		[
+			pad(this.getHours()),
+			pad(this.getMinutes()),
+			pad(this.getSeconds())
+		].join(':')
+	].join(' ');
+}
