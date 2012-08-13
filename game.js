@@ -1,10 +1,14 @@
 var util = require('util');
 var events = require("events");
+var fs = require('fs');
+require('./util');
 
-Game = function Game() {
+Game = function Game(name) {
 	this.players = {};
 	this.livingPlayers = {};
 	this.running = false;
+	this.name = name;
+	this.logfile = fs.createWriteStream('logs/'+name, {flags: 'a+'});
 
 	var lastt = +Date.now();
 	setInterval((function() {
@@ -16,10 +20,17 @@ Game = function Game() {
 }
 
 util.inherits(Game, events.EventEmitter);
+Game.prototype.log = function(msg) {
+	var t = new Date().timestamp();
+	this.logfile.write(t.grey + ' - ' + msg+ '\n');
+	console.log(t.grey + ' - ' + '['.grey+this.name+']'.grey + ' ' + msg );
+}
 Game.prototype.addPlayer = function(p) {
 	var game = this;
 
 	this.players[p.name] = p;
+
+	p.socket.join(this.name);
 
 	p.on('quit', function() {
 		delete game.players[this.name];
@@ -31,6 +42,8 @@ Game.prototype.addPlayer = function(p) {
 	}).on('death', function(cause, killer) {
 		delete game.livingPlayers[this.name];
 		game.emit('player.death', this, cause, killer);
+	}).on('attack', function(target) {
+		game.emit('player.attack', this, target);
 	});
 
 	this.emit('player.join', p);

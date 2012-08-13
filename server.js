@@ -17,9 +17,9 @@ require('./world');
 require('./snake');
 require('./player');
 require('./game');
+require('./gamemanager');
 //universe = new World(2000, 2000);
 
-var game = new Game();
 
 var app = express.createServer(/*{
     key: fs.readFileSync('ssl/privatekey.pem'),
@@ -27,6 +27,17 @@ var app = express.createServer(/*{
 }*/);
 var port = +process.argv[2] || 8090;
 app.listen(port);
+
+var io = socketio.listen(app);
+io.configure('development', function() {
+	io.set('log level', 1);
+	io.set('close timeout', 2.5);
+})
+
+
+var gameManager = new GameManager(io);
+io.sockets.on('connection', gameManager.playerListener());
+
 
 app.configure(function() {
 	app.use(express.static(__dirname, {maxAge: 60000}));
@@ -53,9 +64,13 @@ app.configure(function() {
 	app.set('view engine', 'ejs');
 	app.use(express.errorHandler());
 });
-app.get('/', function (req, res) {
-	res.render(__dirname + '/index', {port: port, gameName: 'Snake or Break'});
+app.get('/games/:id', function (req, res) {
+	res.render(__dirname + '/index', {port: port, room: req.params.id, gameName: 'Snake or Break'});
 	//res.sendfile(__dirname + '/index.html');
+});
+app.get('/', function (req, res) {
+	res.render(__dirname + '/index', {port: port, room: gameManager.defaultGame.name, gameName: 'Snake or Break'});
+	//res.sendfile(__dirname + '/index.ejs');
 });
 app.get('/local', function (req, res) {
 	res.sendfile(__dirname + '/snakes.html');
@@ -74,90 +89,10 @@ function htmlEntities(str) {
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-var io = socketio.listen(app);
-io.configure('development', function() {
-	io.set('log level', 1);
-	io.set('close timeout', 2.5);
-})
 
-io.sockets.on('connection', game.playerListener());
-
-game.on('start', function() {
-	io.sockets.emit('servermessage', "New game started!");
-})
-.on('player.join', function(p) {
-	util.log("Player ".grey + p.coloredName + " joined".grey);
-
-	if(this.connectedPlayerCount() == 2) {
-		//just left practice mode
-		this.reset();
-		this.start();
-	} else if(this.running) {
-		//game is already running
-		if(this.joinable())
-			p.spawnSnake(game.world);
-		else
-			p.socket.emit('servermessage', 'You\'ll have to wait for the next game');
-	} else {
-		//start practice mode
-		this.start();
-		p.socket.emit('servermessage', 'Practice mode - Waiting for more players');
-	}
-
-	p.on('chat', function(msg) {	
-		var data = {n: this.name, c: this.color.toInt(), m: msg};
-		this.socket.emit('chat', data);
-		this.socket.broadcast.emit('chat', data);
-		util.log(this.coloredName + ": ".grey + msg)
-	});
-
-	util.log(this.connectedPlayerCount().toString().white + " players connected".grey);
-})
-.on('player.death', function(p, type, killer) {
-	if(type == "enemy") {
-		util.log(p.coloredName + " was killed by " + killer.coloredName);
-		// var data = {n: "", c: new Color(192, 192, 192).toInt(), m: "Killed by "+ killer.name};
-		// this.socket.emit('chat', data);
-		io.sockets.emit(
-			'servermessage',
-			'<span style="color:' +killer.color.toString()+'">' + htmlEntities(killer.name) + '</span> killed ' + 
-			'<span style="color:' +p.color.toString()+'">' +	 htmlEntities(p.name) + '</span>!');
-		killer.snake && (killer.snake.maxMass *= 1.5);
-	}
-	else if(type == "console")
-		util.log(this.coloredName + " eliminated");
-})
-.on('player.quit', function(p) {
-	util.log("Player ".grey + p.coloredName + " quit".grey);
-	util.log(this.connectedPlayerCount().toString().white + " players connected".grey);
-})
-.on('player.quit', function(p) {
-	//Clear the world if the player is last to leave
-	if(Object.size(this.livingPlayers) == 0) {
-		this.reset();
-		if(this.connectedPlayerCount() >= 2)
-			this.start();
-	}
-})
-.on('player.death', function(p) {
-	//Clear the world if the player is last to leave
-	if(Object.size(this.livingPlayers) == 1 && !this.joinable()) {
-		var winner = Object.values(this.livingPlayers)[0]
-		io.sockets.emit(
-			'servermessage', '<span style="color:' +winner.color.toString()+'">' + htmlEntities(winner.name) + '</span> won!'
-		);
-		setTimeout(function() {
-			this.reset();
-			if(this.connectedPlayerCount() >= 2)
-				this.start();
-		}.bind(this), 2000);
-	} else {
-		util.log(Object.size(this.livingPlayers));
-	}
-})
 
 setInterval(function() {
-	io.sockets.emit('scores', game.scores());
+	io.sockets.emit('scores', gameManager.defaultGame.scores());
 }, 500);
 
 (function makeCLI() {
@@ -177,7 +112,7 @@ setInterval(function() {
 				if(line.indexOf(command) == 0) {
 					var name = line.substr(command.length + 1);
 					var completions = [];
-					Object.forEach(game.players, function(p, n) {
+					Object.forEach(gameManager.defaultGame.players, function(p, n) {
 						if(n.indexOf(name) == 0)
 							completions.push(command + ' ' + n);
 					})
@@ -211,19 +146,19 @@ setInterval(function() {
 	//Add commands
 	cli.on('line', function(line) {
 		if(/^\s*players/.test(line)) {
-			util.log(Object.values(game.players).pluck('coloredName').join(', '));
+			util.log(Object.values(gameManager.defaultGame.players).pluck('coloredName').join(', '));
 		} else if(/^\s*game/.test(line)) {
-			console.log(game);
+			console.log(gameManager.defaultGame);
 		} else if(/^\s*mass/.test(line)) {
-			console.log('Total mass of the universe: '+game.world.totalMass);
+			console.log('Total mass of the universe: '+gameManager.defaultGame.world.totalMass);
 		} else if(/^\s*score/.test(line)) {
 			var width = cli.columns;
-			var perMass = width / game.world.totalMass;
+			var perMass = width / gameManager.defaultGame.world.totalMass;
 			var bar = "";
 			var barLength = 0;
 			var scoreSoFar = 0;
 
-			Object.forEach(game.players, function(p) {
+			Object.forEach(gameManager.defaultGame.players, function(p) {
 				if(p.snake) {
 					var score = p.snake.mass;
 					scoreSoFar += score;
@@ -237,20 +172,20 @@ setInterval(function() {
 			});
 
 			console.log(bar);
-			console.log(Object.values(game.players).pluck('coloredName').join(', '));
+			console.log(Object.values(gameManager.defaultGame.players).pluck('coloredName').join(', '));
 		} else if(matches = /^\s*balls (\d+)/.exec(line)) {
-			game.generateBalls(+matches[1]);
+			gameManager.defaultGame.generateBalls(+matches[1]);
 		} else if(matches = /^\s*kick (.+)/.exec(line)) {
-			var player = game.players[matches[1]]
+			var player = gameManager.defaultGame.players[matches[1]]
 			player && player.disconnect();
 		} else if(matches = /^\s*kill (.+)/.exec(line)) {
-			var player = game.players[matches[1]]
+			var player = gameManager.defaultGame.players[matches[1]]
 			player && player.kill();
 		} else if(matches = /^\s*spawn (.+)/.exec(line)) {
-			var player = game.players[matches[1]]
-			player && !player.snake && player.spawnSnake(game.world);
+			var player = gameManager.defaultGame.players[matches[1]]
+			player && !player.snake && player.spawnSnake(gameManager.defaultGame.world);
 		} else if(matches = /^\s*help (.+)/.exec(line)) {
-			var player = game.players[matches[1]]
+			var player = gameManager.defaultGame.players[matches[1]]
 			player && player.snake && (player.snake.maxMass *= 2);
 		} else {
 			util.log('sending "'.grey+line+'"'.grey);

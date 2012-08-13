@@ -9,7 +9,7 @@
 		<meta property="fb:admins" content="eric.wieser"/>
 		<link rel="shortcut icon" href="/favicon.png">
 		<script src="/socket.io/socket.io.js"></script>
-		<script src="browserify.js"></script>
+		<script src="/browserify.js"></script>
 		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Dosis:300,600|Ubuntu" />
 		<style>
 			html, body {
@@ -232,7 +232,7 @@
 		<div id="login" class="vertical-center">
 			<div>
 				<div class="box">
-					<h1><%= gameName %></h2>
+					<h1><%= gameName %> @ <%= room %> </h2>
 					<p>Control the snake by moving the mouse - no clicking required. Eat other snakes, or be eaten. <a href="#" id="about-link">About</a>.</p>
 					<form id="join">
 						<button type="submit">Join the game</button>
@@ -265,6 +265,9 @@
 			require('./world');
 			require('./ball');
 			require('./entity');
+
+			var port = <%- port %>;
+			var gameName = <%- JSON.stringify(room) %>;
 
 			var colorId = Math.random();
 			var color = Color.niceColor(colorId);
@@ -345,7 +348,7 @@
 
 			
 
-			var socket = io.connect(':<%- port %>');
+			var socket = io.connect(':'+port);
 			//var socket = io.connect('/');
 			var name;
 			var head;
@@ -383,14 +386,24 @@
 
 			var isTrying = false;
 			var playing = false;
-
+			
+			$('#login').hide();
+			socket.on('connect', function() {
+				socket.emit('room', gameName, function() {
+					$('#login').show();
+				});
+			});
 			$('#join').submit(function() {
 				//Stop things happening while the response is being waited for
 				if(!isTrying) {
 					isTrying = true;
 					n = nameinput.val();
 
-					socket.emit('join', {name: n, color: colorId}, function(data) {
+					socket.emit('join', {
+						name: n,
+						color: colorId,
+						game: gameName
+					}, function(data) {
 						if(data === true) {
 							localStorage['name'] = name = n;
 							$('#login').fadeOut(function() {
