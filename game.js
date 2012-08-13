@@ -199,8 +199,5 @@ Game.prototype.scores = function() {
 			name, Math.round(1000*p.snake.mass / mass), p.color.toString()
 		]);
 	});
-	scores.sort(function(a, b){ 
-		return a[1] > b[1] ? 1 : a[1] < b[1] ? -1 : 0;
-	});
 	return scores;
 }

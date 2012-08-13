@@ -267,44 +267,37 @@
 				var scoreBar = $('.score-bar').empty();
 
 				if(scores) {
-
-					//Keep track of left and rightmost bars
-					var mostLeft = 0;
-					var mostRight = 0;
-
 					//Expand to an objects - data sent as array to save space
 					scores = scores.map(function(score) {
 						return { name: score[0], value: score[1], color: score[2] };
 					});
 
+					//Calculate the spacing of the bars
+					var unclaimed = 1000 - scores.pluck('value').reduce(function(a, b) { return a + b; });
+					var gap = unclaimed / (scores.length - 1);
 
+					//Keep track of leftmost bar
+					var left = 0;
 
+					//draw bars
+					scores.forEach(function(score) {
+						//left
+						$('<div />').css({
+							backgroundColor: score.color,
+							width: (score.value / 10) + '%',
+							left:  (left        / 10) + '%'
+						}).appendTo(scoreBar);
+						left += score.value + gap;
+					});
+
+					scores.sort(function(a, b) { return a.score - b.score; })
+
+					//draw numbers and names
 					scores.forEach(function(score, i) {
-						//Add names to scoreboard
 						$('<li />').append(
 							$('<span class="name"/>').text(score.name), " ", 
 							$('<span />').text(score.value)
 						).css('color', score.color).appendTo(scoreList);
-
-						//Pad out the bar, alternating sides
-						if(i%2 == 0) {
-							//left
-							$('<div />').css({
-								backgroundColor: score.color,
-								width: (score.value / 10) + '%',
-								left:  (mostLeft    / 10) + '%'
-							}).appendTo(scoreBar);
-							mostLeft += score.value;
-						}
-						else {
-							//right
-							$('<div />').css({
-								backgroundColor: score.color,
-								width: (score.value / 10) + '%',
-								right: (mostRight   / 10) + '%'
-							}).appendTo(scoreBar);
-							mostRight += score.value;
-						}
 					});
 				}
 			});
