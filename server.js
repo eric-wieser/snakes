@@ -90,9 +90,10 @@ function htmlEntities(str) {
 }
 
 
-
 setInterval(function() {
-	io.sockets.emit('scores', gameManager.defaultGame.scores());
+	gameManager.games.forEach(function(game) {
+		io.sockets.in(game.name).emit('scores', game.scores());
+	});
 }, 500);
 
 (function makeCLI() {
