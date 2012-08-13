@@ -40,7 +40,7 @@ io.sockets.on('connection', gameManager.playerListener());
 
 
 app.configure(function() {
-	app.use(express.static(__dirname, {maxAge: 60000}));
+	app.use(express.static(__dirname + '/public', {maxAge: 60000}));
 	app.use(browserify({
 		require : [
 			'events',
