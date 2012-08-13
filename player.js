@@ -45,11 +45,11 @@ Player.prototype.disconnect = function() {
 		this.snake = null;
 	}
 }
-Player.prototype.kill = function() {
+Player.prototype.kill = function(reason) {
 	if(this.connected && this.snake) {
 		this.snake.destroy();
 		this.snake = null;
-		this.emit('death', 'console');
+		this.emit('death', reason);
 	}
 }
 Player.prototype.chat = function(msg) {
@@ -82,7 +82,7 @@ Player.prototype.spawnSnake = function(world) {
 			})
 			.on('eat.tail', function(ball) {
 				if(ball.ownerSnake && ball.ownerSnake.owner)
-					util.log($this.coloredName +" ate some of "+ball.ownerSnake.owner.coloredName);
+					$this.emit('attack', ball.ownerSnake.owner);
 			});
 		this.snake = snake;
 
