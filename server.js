@@ -195,6 +195,7 @@ setInterval(function() {
 		cli.prompt();
 	}).on('close', function() {
 		io.sockets.emit('servermessage', 'Server going down!');
+		io.sockets.emit('serverstop');
 		process.exit(0);
 	});
 	cli.prompt();

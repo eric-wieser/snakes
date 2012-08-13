@@ -386,7 +386,7 @@
 
 			var isTrying = false;
 			var playing = false;
-			
+
 			$('#login').hide();
 			socket.on('connect', function() {
 				socket.emit('room', gameName, function() {
@@ -435,6 +435,9 @@
 			// });
 			socket.on('servermessage', function (str) {
 				$('#message').html(str);
+			});
+			socket.on('serverstop', function (str) {
+				playing = false;
 			});
 			socket.on('ping', function() {
 				socket.emit('ping');
