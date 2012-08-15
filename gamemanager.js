@@ -148,6 +148,7 @@ GameManager.prototype.playerListener = function() {
 			//Prevent names of stupid lengths
 			if(name.length < 3 || name.length > 64) {
 				callback({error: "Name length invalid"});
+				return;
 			}
 
 			player = new Player(socket, name, Color.niceColor(data.color));
