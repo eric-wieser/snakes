@@ -74,6 +74,7 @@ app.get('/games/:id/log', function (req, res) {
 	});
 });
 app.get('/games/:id', function (req, res) {
+	res.cookie('room', req.params.id, { maxAge: 900000 });
 	res.render(__dirname + '/index', {port: port, room: req.params.id, gameName: 'Snake or Break'});
 });
 app.get('/games', function (req, res) {

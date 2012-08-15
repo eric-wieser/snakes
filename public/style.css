@@ -22,6 +22,16 @@ html, body {
 	position: absolute;
 	height: 10px;
 }
+.score-bar.inline {
+	position: static;
+	height: 5px;
+	background: #808080;
+}
+.score-bar.inline div {
+	position: static;
+	height: 5px;
+	float: left;
+}
 .vertical-center {
 	position: absolute;
 	top: 0;
@@ -183,4 +193,29 @@ canvas {
 	width: 100%;
 	height: 100%;
 	display: block;
+}
+
+ul.games {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+ul.games li {
+	margin: 0;
+	padding: 0;
+	margin-bottom: 10px;
+}
+ul.games a {
+	color: inherit;
+}
+ul.games li .name {
+	float: left;
+	padding: 5px;
+}
+ul.games li .count {
+	float: right;
+	padding: 5px;
+}
+ul.games li .score-bar {
+	clear: both;
 }

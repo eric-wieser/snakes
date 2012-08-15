@@ -20,17 +20,15 @@
 					<h1><%= gameName %> - game list</h1>
 					<ul class="games">
 						<% games.forEach(function(game) { %><li>
-							<a href="/games/<%= game.name %>"><%= game.name %></a>
-							<% if(game.connectedPlayerCount() > 0) {
-							%><ul class="players">
-								<% for(var name in game.players) {
-								%><li>
-									<%= name %>
-								</li><% } %>
-							</ul><% 
-							} else { %>
-								No players online
-							<% } %>
+							<a href="/games/<%= game.name %>">
+								<span class="name"><%= game.name %></span>
+								<span class="count"><%= game.connectedPlayerCount() + (game.connectedPlayerCount() == 1 ? " player" : " players") %></span>
+								<div class="score-bar inline">
+								<% game.scores().forEach(function(score) {%>
+									<div style="background-color: <%= score[2] %>; width: <%= score[1]/10 %>%" title="<%= score[0] %>"></div>
+								<% }); %>
+								</div>
+							</a>
 						</li><% }); %>
 					</ul>
 					<form id="new" class="one-box-form">

@@ -191,7 +191,7 @@ Game.prototype.reset = function() {
 }
 
 Game.prototype.scores = function() {
-	if(!this.running) return;
+	if(!this.running) return [];
 	var scores = []
 	var mass = this.world.totalMass;
 	Object.forEach(this.livingPlayers, function(p, name) {

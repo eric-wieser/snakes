@@ -20,7 +20,7 @@ GameManager.prototype.getGame = function(name) {
 
 GameManager.prototype.createGame = function(name) {
 	var gm = this;
-	game = new Game(name);
+	var game = new Game(name);
 	gm.games.push(game);
 	game.log("New game created!");
 
@@ -116,6 +116,7 @@ GameManager.prototype.playerListener = function() {
 			gameName = name;
 			game = gm.getGame(gameName);
 			socket.join(gameName);
+			console.log("watching " +gameName + ", " + (game ? game.name : "none"));
 
 			facebook.getAPI(socket, function(api) {
 				console.log("Retrieved fb info")
