@@ -47,6 +47,47 @@ var randomInt = function(min, max) {
 	return Math.floor(Math.random() * (max - min) + min);
 };
 
+var domusic = location.search == "?music";
+var music = {};
+function begin() {
+	if(music.ambient && music.emphasis) {
+		music.ambient.play();
+		music.emphasis.play();
+	}
+}
+if(domusic) {
+	//Do music!
+	var clientId = "dd250c3d9ef318565e6f22e871b87fb8";
+	$.getJSON(
+		'http://api.soundcloud.com/resolve.json?callback=?', {
+			url: "http://soundcloud.com/m3henry/snake-test-2",
+			client_id: clientId
+		}, function(data) {
+			if(data.streamable && data.stream_url) {
+				var audio = new Audio();
+				audio.src = data.stream_url+'?client_id='+clientId;
+				audio.loop = true;
+				audio.volume = 0.5
+				music.ambient = audio;
+				begin();
+			}
+		}
+	);
+	$.getJSON(
+		'http://api.soundcloud.com/resolve.json?callback=?', {
+			url: "http://soundcloud.com/m3henry/snake-test-2-1",
+			client_id: clientId
+		}, function(data) {
+			if(data.streamable && data.stream_url) {
+				var audio = new Audio();
+				audio.src = data.stream_url+'?client_id='+clientId;
+				audio.loop = true;
+				music.emphasis = audio;
+				begin();
+			}
+		}
+	);
+}
 
 window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame  || window.oRequestAnimationFrame || function(callback) {
 	window.setTimeout(function() {callback(Date.now())}, 1000 / 60.0);
@@ -191,6 +232,12 @@ function draw(t) {
 	//prepare for next frame
 	lastt = t;
 	requestAnimationFrame(draw);
+
+	if(domusic) {
+		var dist = snakes[0].head.position.minus(snakes[1].head.position).length;
+		var volume = 1 - dist * 2 / universe.width
+		music.emphasis.volume = volume > 1 ? 1 : volume < 0 ? 0 : volume;
+	}
 }
 requestAnimationFrame(draw);
 
