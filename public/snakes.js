@@ -47,46 +47,76 @@ var randomInt = function(min, max) {
 	return Math.floor(Math.random() * (max - min) + min);
 };
 
-var domusic = location.search == "?music";
+function getSoundCloud(id, success, error) {
+	var clientId = "dd250c3d9ef318565e6f22e871b87fb8";
+	$.getJSON(
+		'http://api.soundcloud.com/resolve.json?callback=?', {
+			url: "http://soundcloud.com/"+id,
+			client_id: clientId
+		}, function(data) {
+			if(data.streamable && data.stream_url) {
+				var audio = new Audio();
+				success(audio);
+				audio.src = data.stream_url+'?client_id='+clientId;
+			} else error();
+		}
+	);
+}
+
+var domusic;
 var music = {};
 function begin() {
 	if(music.ambient && music.emphasis) {
+		domusic = true;
+
+		music.ambient.addEventListener('ended', function() {
+			music.ambient.play();
+			music.emphasis.play();
+		});
+		var lastDt = 0;
+		setInterval(function() {
+			var t1 = music.ambient.currentTime;
+			var t2 = music.emphasis.currentTime;
+			var dt = t1 - t2;
+			if(Math.abs(dt) > 0.1) {
+				console.log("resyncing", dt);
+				music.emphasis.currentTime = t1 + lastDt/2;
+				lastDt = dt;
+			}
+		}, 2000);
 		music.ambient.play();
 		music.emphasis.play();
 	}
 }
-if(domusic) {
+if(location.search == "?music") {
 	//Do music!
-	var clientId = "dd250c3d9ef318565e6f22e871b87fb8";
-	$.getJSON(
-		'http://api.soundcloud.com/resolve.json?callback=?', {
-			url: "http://soundcloud.com/m3henry/snake-test-2",
-			client_id: clientId
-		}, function(data) {
-			if(data.streamable && data.stream_url) {
-				var audio = new Audio();
-				audio.src = data.stream_url+'?client_id='+clientId;
-				audio.loop = true;
-				audio.volume = 0.5
-				music.ambient = audio;
-				begin();
-			}
-		}
-	);
-	$.getJSON(
-		'http://api.soundcloud.com/resolve.json?callback=?', {
-			url: "http://soundcloud.com/m3henry/snake-test-2-1",
-			client_id: clientId
-		}, function(data) {
-			if(data.streamable && data.stream_url) {
-				var audio = new Audio();
-				audio.src = data.stream_url+'?client_id='+clientId;
-				audio.loop = true;
-				music.emphasis = audio;
-				begin();
-			}
-		}
-	);
+	getSoundCloud("m3henry/snake-test-2", function(audio) {
+		audio.addEventListener('canplaythrough', function() {
+			music.ambient = audio;
+			audio.volume = 0.5;
+			begin();
+		});
+	});
+	getSoundCloud("m3henry/snake-test-2-1", function(audio) {
+		audio.addEventListener('canplaythrough', function() {
+			music.emphasis = audio;
+			begin();
+		});
+	});
+} else if (location.search == "?musicalex") {
+	//Do music!
+	getSoundCloud("alex-nicholls/rythmic-accompaniment", function(audio) {
+		audio.addEventListener('canplaythrough',function() {
+			music.ambient = audio;
+			begin();
+		});
+	});
+	getSoundCloud("alex-nicholls/melody", function(audio) {
+		audio.addEventListener('canplaythrough', function() {
+			music.emphasis = audio;
+			begin();
+		});
+	});
 }
 
 window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame  || window.oRequestAnimationFrame || function(callback) {
