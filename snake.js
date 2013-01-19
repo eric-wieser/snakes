@@ -131,9 +131,12 @@ Snake.prototype.eatenAt = function(ball) {
 	}
 }
 Snake.prototype.canEat = function(ball) {
-	if(this.balls.contains(ball)) return false;
-	if(this.maxMass * 2 < ball.mass) return false;
-	return true;
+	var that = ball.ownerSnake;
+	if(that == this) return false;
+	else if(that && ball == that.head)
+		return this.head.mass > that.head.mass * 2
+	else
+		return this.head.mass * 2 > ball.mass;
 }
 Snake.prototype.eat = function(ball) {
 	if(!this.canEat(ball)) return false;
