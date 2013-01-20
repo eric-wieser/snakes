@@ -364,11 +364,17 @@
 				if(playing) socket.emit('playercontrol', target.plus(viewOrigin));
 			});
 			var target = new Vector();
-			$(document).mousemove(function(e) {
+			$(document).on(navigator.msPointerEnabled ? 'MSPointerMove' : 'mousemove', function(e) {
 				var offset = $(canvas).offset();
 				target.set(e.pageX - offset.left, e.pageY - offset.top);
 			}).keydown(function() {
 				if(playing) $('#chat input').focus();
+
+			}).on('touchmove', function(e) {
+				var touch = e.touches[0];
+				var offset = $(canvas).offset();
+				target.set(touch.pageX - offset.left, touch.pageY - offset.top);
+				return false;
 			});
 
 			$('#chat').submit(function() {
