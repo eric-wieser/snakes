@@ -1,10 +1,13 @@
-{ 
+{
     "name": "snakes",
     "version": "1.0.0",
     "dependencies": {
         "express": "*",
         "socket.io": "*",
         "colors": "*",
-        "browserify": "*"
+        "browserify": "*",
+        "cookie": "*",
+        "faceplate": "*",
+        "ejs": "*"
     }
 }

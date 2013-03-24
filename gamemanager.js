@@ -120,7 +120,7 @@ GameManager.prototype.playerListener = function() {
 
 			facebook.getAPI(socket, function(api) {
 				console.log("Retrieved fb info")
-				api.me(function(user) {
+				api.me(function(err, user) {
 					fn(user);
 					if(user) {
 						console.log("User is "+user.name)

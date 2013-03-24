@@ -1,4 +1,5 @@
 //var process = require('process');
+var http = require('http');
 var express = require('express');
 var socketio = require('socket.io');
 var readline = require('readline');
@@ -22,14 +23,14 @@ require('./gamemanager');
 //universe = new World(2000, 2000);
 
 
-var app = express.createServer(/*{
+var app = express(/*{
     key: fs.readFileSync('ssl/privatekey.pem'),
     cert: fs.readFileSync('ssl/certificate.pem')
 }*/);
 var port = +process.argv[2] || 8090;
-app.listen(port);
+var server = app.listen(port);
 
-var io = socketio.listen(app);
+var io = socketio.listen(server);
 io.configure('development', function() {
 	io.set('log level', 1);
 	io.set('close timeout', 2.5);
@@ -42,26 +43,42 @@ app.configure(function() {
 	app.use(express.static(__dirname + '/public', {maxAge: 60000}));
 	app.use(express.bodyParser());
 	app.use(express.cookieParser());
-	app.use(express.session({ secret: process.env.SESSION_SECRET || 'secret123' }));
 	app.use(facebook.middleware);
-	app.use(browserify({
-		require : [
-			'events',
-			'util',
-			'./color',
-			'./explosion',
-			'./snake',
-			'./vector',
-			'./ball',
-			'./entity',
-			'./world'
-		],
-		cache: './.browserify-cache.json'
-	}));
 	app.use(express.errorHandler({ dump: true, stack: true }));
 	console.log(process.env.FACEBOOK_APP_ID, process.env.FACEBOOK_SECRET);
 	app.set('view options', { layout: false });
 	app.set('view engine', 'ejs');
+
+	app.use(function addLocals(req, res, next) {
+		res.locals.host = req.headers['host'];
+		res.locals.scheme = req.headers['x-forwarded-proto'] || 'http';
+		res.locals.url = function(path) {
+			return res.locals.scheme + res.locals.url_no_scheme(path);
+		};
+		res.locals.url_no_scheme = function(path) {
+			return '://' + res.locals.host + (path || '');
+		};
+		res.locals.app = {id: process.env.FACEBOOK_APP_ID};
+		next();
+	});
+});
+app.get('/script.js', function(req, res) {
+	browserify([
+		'events',
+		'util',
+		'./color',
+		'./client',
+		'./explosion',
+		'./snake',
+		'./vector',
+		'./ball',
+		'./entity',
+		'./world'
+	]).bundle(function(err, src) {
+		console.log(err);
+		res.contentType('js');
+		res.end(src);
+	})
 });
 app.get('/games/:id/log', function (req, res) {
 	fs.readFile('logs/'+ req.params.id, 'utf8', function (err, data) {
@@ -82,7 +99,6 @@ app.get('/games', function (req, res) {
 });
 app.get('/', function (req, res) {
 	res.render(__dirname + '/index', {port: port, room: gameManager.defaultGame.name, gameName: 'Snake or Break'});
-	//res.sendfile(__dirname + '/index.ejs');
 });
 app.get('/local', function (req, res) {
 	res.sendfile(__dirname + '/snakes.html');
@@ -97,30 +113,11 @@ app.get('/log', function (req, res) {
 	});
 });
 
-app.dynamicHelpers({
-  'host': function(req, res) {
-    return req.headers['host'];
-  },
-  'scheme': function(req, res) {
-    return req.headers['x-forwarded-proto'] || 'http';
-  },
-  'url': function(req, res) {
-    return function(path) {
-      return app.dynamicViewHelpers.scheme(req, res) + app.dynamicViewHelpers.url_no_scheme(req, res)(path);
-    }
-  },
-  'url_no_scheme': function(req, res) {
-    return function(path) {
-      return '://' + app.dynamicViewHelpers.host(req, res) + (path || '');
-    }
-  },
-});
-
 app.get('/fblogin', function(req, res) {
 	console.log(req.headers['host']);
-	req.facebook.app(function(app) {
+	req.facebook.app(function(err, app) {
 		console.log(app);
-		req.facebook.me(function(user) {
+		req.facebook.me(function(err, user) {
 			res.render(__dirname + '/fb', {
 				req:       req,
 				app:       app,
@@ -130,7 +127,7 @@ app.get('/fblogin', function(req, res) {
 	});
 });
 app.get('/whoami', function(req, res) {
-	req.facebook.me(function(user) {
+	req.facebook.me(function(err, user) {
 		res.send("Got back sdfkjs;dfkjs;dlfkjs;ldfkjs;ldkfjs;ldkfjs;ldkfjs;ldjfs;lkfj;sdlkfjs;lkdjf;slkdf;skfd: " + user);
 	});
 	console.log(req.headers);
