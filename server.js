@@ -20,6 +20,7 @@ require('./snake');
 require('./player');
 require('./game');
 require('./gamemanager');
+var commands = require('./commands');
 //universe = new World(2000, 2000);
 
 
@@ -190,79 +191,13 @@ setInterval(function() {
 		process.__defineGetter__('stdout', function() { return newStdout; });
 	})();
 
-	function Command(pattern, f) {
-		this.pattern = pattern;
-		this.f = f;
-	}
-	Command.prototype.tryRun = function(line) {
-		var matches = this.pattern.exec(line);
-		if(matches) this.f.apply(this, matches);
-		return matches != null;
-	};
-
-	var commands = [
-		new Command(/^\s*players/, function() {
-			util.log(Object.values(gameManager.defaultGame.players).pluck('coloredName').join(', '));
-		}),
-		new Command(/^\s*game/, function() {
-			console.log(gameManager.defaultGame);
-		}),
-		new Command(/^\s*mass/, function() {
-			console.log('Total mass of the universe: '+gameManager.defaultGame.world.totalMass);
-		}),
-		new Command(/^\s*score/, function() {
-			var width = cli.columns;
-			var perMass = width / gameManager.defaultGame.world.totalMass;
-			var bar = "";
-			var barLength = 0;
-			var scoreSoFar = 0;
-
-			Object.forEach(gameManager.defaultGame.players, function(p) {
-				if(p.snake) {
-					var score = p.snake.mass;
-					scoreSoFar += score;
-					var thisBar = "";
-					while(barLength + thisBar.length < scoreSoFar * perMass)
-						thisBar += '█';
-
-					barLength += thisBar.length;
-					bar += thisBar.colored(p.color);
-				}
-			});
-
-			console.log(bar);
-			console.log(Object.values(gameManager.defaultGame.players).pluck('coloredName').join(', '));
-		}),
-		new Command(/^\s*balls (\d+)/, function(n) {
-			gameManager.defaultGame.generateBalls(+n);
-		}),
-		new Command(/^\s*kick (.+)/, function(name) {
-			var player = gameManager.defaultGame.players[name]
-			player && player.disconnect();
-		}),
-		new Command(/^\s*kill (.+)/, function(name) {
-			var player = gameManager.defaultGame.players[name]
-			player && player.kill();
-		}),
-		new Command(/^\s*spawn (.+)/, function(name) {
-			var player = gameManager.defaultGame.players[name]
-			player && !player.snake && player.spawnSnake(gameManager.defaultGame.world);
-		}),
-		new Command(/^\s*help (.+)/, function(name) {
-			var player = gameManager.defaultGame.players[name]
-			player && player.snake && (player.snake.maxMass *= 2);
-		}),
-		new Command(/^(.+)/, function(msg) {
-			util.log('sending "'.grey+msg+'"'.grey);
-			io.sockets.emit('servermessage', ""+msg);
-		})
-	]
-
 	//Add commands
 	cli.on('line', function(line) {
-		var success = commands.some(function(c) {
-			return c.tryRun(line);
-		});
+		var success = commands.tryRun(line, gameManager.defaultGame);
+		if(!success) {
+			util.log('sending "'.grey+line+'"'.grey);
+			io.sockets.emit('servermessage', ""+line);
+		}
 		cli.prompt();
 	}).on('close', function() {
 		io.sockets.emit('servermessage', 'Server going down!');
