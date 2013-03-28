@@ -182,9 +182,8 @@ setInterval(function() {
 		var newStdout = Object.create(process.stdout);
 		newStdout.write = function() {
 			cli.output.write('\x1b[2K\r');
-			var args = Array.prototype.slice.call(arguments);
-			var result = oldWrite.apply(this, args);
-			logfile.write(args);
+			var result = oldWrite.apply(this, arguments);
+			logfile.write.apply(logfile, arguments);
 			cli._refreshLine();
 			return result;
 		}
