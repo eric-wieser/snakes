@@ -190,15 +190,27 @@ setInterval(function() {
 		process.__defineGetter__('stdout', function() { return newStdout; });
 	})();
 
-	//Add commands
-	cli.on('line', function(line) {
-		if(/^\s*players/.test(line)) {
+	function Command(pattern, f) {
+		this.pattern = pattern;
+		this.f = f;
+	}
+	Command.prototype.tryRun = function(line) {
+		var matches = this.pattern.exec(line);
+		if(matches) this.f.apply(this, matches);
+		return matches != null;
+	};
+
+	var commands = [
+		new Command(/^\s*players/, function() {
 			util.log(Object.values(gameManager.defaultGame.players).pluck('coloredName').join(', '));
-		} else if(/^\s*game/.test(line)) {
+		}),
+		new Command(/^\s*game/, function() {
 			console.log(gameManager.defaultGame);
-		} else if(/^\s*mass/.test(line)) {
+		}),
+		new Command(/^\s*mass/, function() {
 			console.log('Total mass of the universe: '+gameManager.defaultGame.world.totalMass);
-		} else if(/^\s*score/.test(line)) {
+		}),
+		new Command(/^\s*score/, function() {
 			var width = cli.columns;
 			var perMass = width / gameManager.defaultGame.world.totalMass;
 			var bar = "";
@@ -220,24 +232,37 @@ setInterval(function() {
 
 			console.log(bar);
 			console.log(Object.values(gameManager.defaultGame.players).pluck('coloredName').join(', '));
-		} else if(matches = /^\s*balls (\d+)/.exec(line)) {
-			gameManager.defaultGame.generateBalls(+matches[1]);
-		} else if(matches = /^\s*kick (.+)/.exec(line)) {
-			var player = gameManager.defaultGame.players[matches[1]]
+		}),
+		new Command(/^\s*balls (\d+)/, function(n) {
+			gameManager.defaultGame.generateBalls(+n);
+		}),
+		new Command(/^\s*kick (.+)/, function(name) {
+			var player = gameManager.defaultGame.players[name]
 			player && player.disconnect();
-		} else if(matches = /^\s*kill (.+)/.exec(line)) {
-			var player = gameManager.defaultGame.players[matches[1]]
+		}),
+		new Command(/^\s*kill (.+)/, function(name) {
+			var player = gameManager.defaultGame.players[name]
 			player && player.kill();
-		} else if(matches = /^\s*spawn (.+)/.exec(line)) {
-			var player = gameManager.defaultGame.players[matches[1]]
+		}),
+		new Command(/^\s*spawn (.+)/, function(name) {
+			var player = gameManager.defaultGame.players[name]
 			player && !player.snake && player.spawnSnake(gameManager.defaultGame.world);
-		} else if(matches = /^\s*help (.+)/.exec(line)) {
-			var player = gameManager.defaultGame.players[matches[1]]
+		}),
+		new Command(/^\s*help (.+)/, function(name) {
+			var player = gameManager.defaultGame.players[name]
 			player && player.snake && (player.snake.maxMass *= 2);
-		} else {
-			util.log('sending "'.grey+line+'"'.grey);
-			io.sockets.emit('servermessage', ""+line);
-		}
+		}),
+		new Command(/^(.+)/, function(msg) {
+			util.log('sending "'.grey+msg+'"'.grey);
+			io.sockets.emit('servermessage', ""+msg);
+		})
+	]
+
+	//Add commands
+	cli.on('line', function(line) {
+		var success = commands.some(function(c) {
+			return c.tryRun(line);
+		});
 		cli.prompt();
 	}).on('close', function() {
 		io.sockets.emit('servermessage', 'Server going down!');
