@@ -7,7 +7,7 @@ var util = require('util');
 var Entity = require('./entity');
 
 function Ball(pos, radius, color) {
-	Entity.call(this, pos)
+	Entity.call(this, pos);
 	this.radius = radius;
 	this.color = color || 'red';
 
@@ -61,25 +61,24 @@ Ball.prototype.bounceOffWalls = function(width, height) {
 };
 
 Ball.prototype.interactWith = function(that) {
-	if(this.following == that || that.following == this) { return false; } 
-	else {
-		var diff = this.position.minus(that.position);
-		var dist = diff.length;
-		diff.overEquals(dist);
+	if(this.following == that || that.following == this) return false;
 
-		var overlap = this.radius + that.radius - dist;
-		if(overlap > 0 && dist != 0 && Entity.allowInteraction(this, that)) {
-			var meanmass = 1 / ((1 / this.mass) + (1 / that.mass));
+	var diff = this.position.minus(that.position);
+	var dist = diff.length;
+	diff.overEquals(dist);
 
-			overlap *= meanmass;
-			this.forces.contact[that.id] = diff.times(overlap*200);
-			that.forces.contact[this.id] = diff.times(-overlap*200);
-			return true;
-		}
+	var overlap = this.radius + that.radius - dist;
+	if(overlap > 0 && dist != 0 && Entity.allowInteraction(this, that)) {
+		var meanmass = 1 / ((1 / this.mass) + (1 / that.mass));
+
+		overlap *= meanmass;
+		this.forces.contact[that.id] = diff.times(overlap*200);
+		that.forces.contact[this.id] = diff.times(-overlap*200);
+		return true;
 	}
 
 	return false;
-}
+};
 
 Ball.prototype.clearForces = function() {
 	Entity.prototype.clearForces.call(this);
@@ -94,7 +93,7 @@ Ball.prototype.clearForces = function() {
 		delete this.followedBy.following;
 		delete this.followedBy;
 	}
-}
+};
 
 Ball.prototype.drawTo = function(ctx) {
 	ctx.save();

@@ -11,10 +11,10 @@ var colorId = Math.random();
 var color = Color.niceColor(colorId);
 $('.box').css({
 	borderTopColor: color.toString(),
-	borderBottomColor: color.toString(),
+	borderBottomColor: color.toString()
 });
 $('a').css({
-	borderBottomColor: color.toString(),
+	borderBottomColor: color.toString()
 });
 $('#login input, h2, a').css({
 	color: color.toString()
@@ -51,9 +51,11 @@ $('#about-link').click(function() {
 		.queue(function(next) { $('#about').fadeOut(next);      })
 		.fadeIn();
 	return false;
-})
+});
 window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame  || window.oRequestAnimationFrame || function(callback) {
-		window.setTimeout(function() {callback(Date.now())}, 1000 / 60.0);
+		window.setTimeout(function() {
+			callback(Date.now());
+		}, 1000 / 60.0);
 	};
 
 
@@ -66,14 +68,7 @@ $(window).resize(function(){
 	height = canvas.height = $(canvas).height();
 }).resize();
 
-// $(window).resize(function(){
-// 	width = canvas.width = $(canvas).width();
-// 	height = canvas.height = $(canvas).height();
-// }).resize();
-
 var ctx = canvas.getContext('2d');
-var ball;
-var opponents = {};
 
 var keycodes = {
 	up:    87,
@@ -93,7 +88,7 @@ var head;
 var heads;
 var viewOrigin = Vector.zero;
 function nextViewOrigin() {
-	var x, y
+	var x, y;
 	if(!head) {
 		x = (universe.width - width) / 2;
 		y = (universe.height - height) / 2;
@@ -164,24 +159,10 @@ $('#join').submit(function() {
 	return false;
 });
 
-// socket.on('entityadded', function (data) {
-// 	if(data.i in universe.entities) return;
-
-// 	var b = new Ball(
-// 		Vector.ify(data.p),
-// 		data.r,
-// 		Color.ify(data.c)
-// 	);
-// 	b._id = data.i; //probably going to regret this
-// 	universe.addEntity(b);
-// });
-// socket.on('entitylost', function (id) {
-// 	delete universe.entities[id];
-// });
 socket.on('servermessage', function (str) {
 	$('#message').html(str);
 });
-socket.on('serverstop', function (str) {
+socket.on('serverstop', function () {
 	playing = false;
 });
 socket.on('ping', function() {
@@ -216,10 +197,10 @@ socket.on('scores', function (scores) {
 			left += score.value + gap;
 		});
 
-		scores.sort(function(a, b) { return a.score - b.score; })
+		scores.sort(function(a, b) { return a.score - b.score; });
 
 		//draw numbers and names
-		scores.forEach(function(score, i) {
+		scores.forEach(function(score) {
 			$('<li />').append(
 				$('<span class="name"/>').text(score.name), " ", 
 				$('<span />').text(score.value)
@@ -284,7 +265,7 @@ else
 
 $(document).keydown(function() {
 	if(playing) $('#chat input').focus();
-})
+});
 
 $('#chat').submit(function() {
 	if(playing) {
@@ -342,7 +323,7 @@ function draw(t) {
 			right:  h.position.x - h.radius > viewOrigin.x + width,
 			top:    h.position.y + h.radius < viewOrigin.y,
 			bottom: h.position.y - h.radius > viewOrigin.y + height
-		}
+		};
 		off.any = off.right || off.left || off.top || off.bottom;
 		if(!off.any) {
 			ctx.beginPath();
