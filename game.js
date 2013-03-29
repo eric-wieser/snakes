@@ -1,9 +1,16 @@
+"use strict";
+
 var util = require('util');
 var events = require("events");
 var fs = require('fs');
 require('./util');
 
-Game = function Game(name) {
+var Ball = require('./ball');
+var Vector = require('./vector');
+var Color = require('./color');
+var World = require('./world');
+
+function Game(name) {
 	this.players = {};
 	this.livingPlayers = {};
 	this.running = false;
@@ -201,3 +208,5 @@ Game.prototype.scores = function() {
 	});
 	return scores;
 }
+
+module.exports = Game;

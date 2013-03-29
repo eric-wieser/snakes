@@ -1,4 +1,6 @@
-Color = function(r, g, b) {
+"use strict";
+
+var Color = function(r, g, b) {
 	this.r = r ? Color.clipComponent(r) : 0;
 	this.g = g ? Color.clipComponent(g) : 0;
 	this.b = b ? Color.clipComponent(b) : 0;
@@ -51,7 +53,7 @@ Object.defineProperty(String.prototype, 'colored', {
 		var r = Math.round(c.r * 5 / 255);
 		var g = Math.round(c.g * 5 / 255);
 		var b = Math.round(c.b * 5 / 255);
-		return '\033[38;5;' + (16 + r*36 + g*6 + b) + 'm' + this + '\033[0m';
+		return '\u001b[38;5;' + (16 + r*36 + g*6 + b) + 'm' + this + '\u001b[0m';
 	},
 	enumerable: false
 });
@@ -112,3 +114,5 @@ Color.magenta = function() { return new Color(255, 0, 255); }
 Color.white   = function() { return new Color(255, 255, 255); }
 Color.gray    = function() { return new Color(128, 128, 128); }
 Color.black   = function() { return new Color(  0,   0,   0); }
+
+module.exports = Color;

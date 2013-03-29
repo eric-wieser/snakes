@@ -1,3 +1,5 @@
+"use strict";
+
 Array.prototype.contains = function(x) { return this.indexOf(x) != -1; };
 Array.prototype.pluck = function(prop) { return this.map(function(x) { return x[prop]; }); };
 
@@ -38,7 +40,7 @@ Object.values = function(obj) {
 };
 Object.size = function(obj) { var i = 0; for(var k in obj) ++i; return i; }
 Object.reduce = function(obj, f, start, thisPtr) {
-	current = start || 0;
+	var current = start || 0;
 	for(var k in obj) {
 		if(obj.hasOwnProperty(k)) {
 			current = f.call(thisPtr, current, obj[k], k, obj)

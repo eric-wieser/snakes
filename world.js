@@ -1,7 +1,10 @@
+"use strict";
+
 var util = require('util');
 var events = require('events');
-require('./vector');
-World = function World(width, height) {
+var Vector = require('./vector');
+
+function World(width, height) {
     events.EventEmitter.call(this);
 	this.entities = [];
 	this.width = width || 0;
@@ -52,3 +55,5 @@ World.prototype.entityById = function(id) {
 Object.defineProperty(World.prototype, 'totalMass', {get: function() {
 	return this.entities.reduce(function(sum, e) { return e.mass + sum; }, 0);
 }});
+
+module.exports = World;

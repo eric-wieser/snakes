@@ -1,8 +1,13 @@
+"use strict";
+
 require('./util');
 var util = require('util');
 var events = require('events');
 
-Snake = function Snake(length, color, pos, world) {
+var Ball = require('./ball');
+var Vector = require('./vector');
+
+var Snake = function Snake(length, color, pos, world) {
 	events.EventEmitter.call(this);
 	this.onHeadHit = Snake.onHeadHit.bind(this);
 
@@ -193,3 +198,5 @@ Snake.prototype.update = function(dt) {
 		b2.follow(b1);
 	}, this);
 };
+
+module.exports = Snake;

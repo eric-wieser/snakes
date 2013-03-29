@@ -1,4 +1,6 @@
-Vector = function Vector(x, y) {
+"use strict";
+
+function Vector(x, y) {
 	this.x = x;
 	this.y = y;
 }
@@ -151,12 +153,14 @@ Object.defineProperties(Vector, {
 	NaN:  {get: function() { return new Vector(NaN, NaN) } }
 });
 
-Vector.prototype['+'] = Vector.prototype.plus
-Vector.prototype['-'] = Vector.prototype.minus
-Vector.prototype['*'] = Vector.prototype.times
-Vector.prototype['/'] = Vector.prototype.over
+Vector.prototype['+'] = Vector.prototype.plus;
+Vector.prototype['-'] = Vector.prototype.minus;
+Vector.prototype['*'] = Vector.prototype.times;
+Vector.prototype['/'] = Vector.prototype.over;
 
-Vector.prototype['+='] = Vector.prototype.plusEquals
-Vector.prototype['-='] = Vector.prototype.minusEquals
-Vector.prototype['*='] = Vector.prototype.timesEquals
-Vector.prototype['/='] = Vector.prototype.overEquals
+Vector.prototype['+='] = Vector.prototype.plusEquals;
+Vector.prototype['-='] = Vector.prototype.minusEquals;
+Vector.prototype['*='] = Vector.prototype.timesEquals;
+Vector.prototype['/='] = Vector.prototype.overEquals;
+
+module.exports = Vector;

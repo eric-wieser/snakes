@@ -1,9 +1,9 @@
-var events = require('events');
-require('./color');
-require('./snake');
-require('./world');
-require('./ball');
-require('./entity');
+"use strict";
+
+var World = require('./world');
+var Ball = require('./ball');
+var Vector = require('./vector');
+var Color = require('./color');
 
 $(function() {
 
@@ -141,7 +141,7 @@ $('#join').submit(function() {
 	//Stop things happening while the response is being waited for
 	if(!isTrying) {
 		isTrying = true;
-		n = nameinput.val();
+		var n = nameinput.val();
 
 		socket.emit('join', {
 			name: n,
@@ -199,7 +199,7 @@ socket.on('scores', function (scores) {
 		});
 
 		//Calculate the spacing of the bars
-		var unclaimed = 1000 - scores.pluck('value').reduce(function(a, b) { return a + b; });
+		var unclaimed = 1000 - scores.pluck('value').reduce(function(a, b) { return a + b; }, 0);
 		var gap = unclaimed / (scores.length - 1);
 
 		//Keep track of leftmost bar
@@ -243,7 +243,7 @@ socket.on('entityupdates', function (data) {
 			universe.entities[+id] = b;
 		}
 	});
-	for(id in universe.entities)
+	for(var id in universe.entities)
 		if(!(id in data.e))
 			delete universe.entities[id];
 

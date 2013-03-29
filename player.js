@@ -1,7 +1,12 @@
+"use strict";
+
 var util = require("util");
 var events = require("events");
 
-Player = function Player(socket, name, color) {
+var Snake = require('./snake');
+var Vector = require('./vector');
+
+function Player(socket, name, color) {
     events.EventEmitter.call(this);
 	this.socket = socket;
 	this.color = color;
@@ -88,3 +93,5 @@ Player.prototype.spawnSnake = function(world) {
 
 	}
 }
+
+module.exports = Player;

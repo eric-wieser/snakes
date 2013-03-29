@@ -1,7 +1,10 @@
+"use strict";
+
 var util = require('util');
 var events = require('events');
+var Vector = require('./vector');
 
-Entity = function Entity(position, velocity) {
+var Entity = function Entity(position, velocity) {
     events.EventEmitter.call(this);
 	this.position = position || Vector.zero;
 	this.velocity = velocity || Vector.zero;
@@ -46,3 +49,5 @@ Entity.prototype.clearForces = function(dt) {
 }
 Entity.prototype.mass = 1;
 Entity.prototype.touches = function() { return false; };
+
+module.exports = Entity;

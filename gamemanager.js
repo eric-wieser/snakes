@@ -1,13 +1,19 @@
+"use strict";
+
 var util = require('util');
 var events = require("events");
+
 var facebook = require("./facebook");
+var Color = require("./color");
+var Player = require("./player");
+var Game = require("./game");
 
 
 function htmlEntities(str) {
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-GameManager = function GameManager(io) {
+function GameManager(io) {
 	this.io = io;
 	this.games = [];
 	this.defaultGame = this.createGame('main');
@@ -172,3 +178,5 @@ GameManager.prototype.playerListener = function() {
 		});
 	}
 }
+
+module.exports = GameManager;

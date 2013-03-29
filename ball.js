@@ -1,10 +1,12 @@
-require('./entity');
-require('./vector');
+"use strict";
+
 require('./util');
 
 var util = require('util');
 
-Ball = function Ball(pos, radius, color) {
+var Entity = require('./entity');
+
+function Ball(pos, radius, color) {
 	Entity.call(this, pos)
 	this.radius = radius;
 	this.color = color || 'red';
@@ -108,7 +110,7 @@ Ball.prototype.follow = function(that) {
 	this.following = that;
 	that.followedBy = this;
 
-	target = this.position.minus(that.position)
+	var target = this.position.minus(that.position)
 		.normalize()
 		.timesEquals(this.radius + that.radius)
 		.plusEquals(that.position);
@@ -116,7 +118,9 @@ Ball.prototype.follow = function(that) {
 	if(target.isFinite()) {
 		this.forces.following[that.id] = target.minus(this.position).times(this.mass);
 		that.forces.following[this.id] = target.minus(this.position).times(-that.mass);
-		this.position = target
+		this.position = target;
 	}
 	return this;
 };
+
+module.exports = Ball;

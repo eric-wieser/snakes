@@ -1,3 +1,5 @@
+"use strict";
+
 //var process = require('process');
 var http = require('http');
 var express = require('express');
@@ -11,15 +13,7 @@ var cookie = require('cookie');
 var facebook = require('./facebook');
 
 require('./util');
-require('./color');
-require('./vector');
-require('./entity');
-require('./ball');
-require('./world');
-require('./snake');
-require('./player');
-require('./game');
-require('./gamemanager');
+var GameManager = require('./gamemanager');
 var commands = require('./commands');
 //universe = new World(2000, 2000);
 
@@ -64,18 +58,7 @@ app.configure(function() {
 	});
 });
 app.get('/script.js', function(req, res) {
-	browserify([
-		'events',
-		'util',
-		'./color',
-		'./client',
-		'./explosion',
-		'./snake',
-		'./vector',
-		'./ball',
-		'./entity',
-		'./world'
-	]).bundle(function(err, src) {
+	browserify(['./client']).bundle(function(err, src) {
 		console.log(err);
 		res.contentType('js');
 		res.end(src);
