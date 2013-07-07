@@ -48,8 +48,8 @@ var list = exports.list = [
 	new Command('mass', function(g) {
 		console.log('Total mass of the universe: '+g.world.totalMass);
 	}),
-	new Command('score', function(g) {
-		var width = cli.columns;
+	new Command('score', function(g, cli) {
+		var width = cli ? cli.columns : 50;
 		var perMass = width / g.world.totalMass;
 		var bar = "";
 		var barLength = 0;
@@ -88,8 +88,8 @@ var list = exports.list = [
 	})
 ]
 
-exports.tryRun = function(line, game) {
+exports.tryRun = function(line, game, cli) {
 	return list.some(function(c) {
-		return c.tryRun(line, game);
+		return c.tryRun(line, game, cli);
 	});
 }
