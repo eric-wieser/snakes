@@ -1,7 +1,6 @@
-var util = require('util');
-require('./util');
+"use strict";
 
-Explosion = function Explosion(pos) {
+var Explosion = function Explosion(pos) {
 	this.position = pos;
 	this.age = 0;
 	this.rate = 50;
@@ -83,3 +82,5 @@ Explosion.prototype.drawTo = function(ctx) {
 		mirror.drawTo(ctx);
 	});
 }
+
+module.exports = Explosion;

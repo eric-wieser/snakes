@@ -1,10 +1,11 @@
-"use strict"; 
-require('./snake');
-require('./explosion');
-require('./color');
-require('./vector');
-require('./world');
-require('./ball');
+"use strict";
+var Explosion = require('./explosion');
+
+var World = require('./world');
+var Ball = require('./ball');
+var Vector = require('./vector');
+var Color = require('./color');
+var Snake = require('./snake');
 
 Array.prototype.contains = function(x) { return this.indexOf(x) != -1; }
 
@@ -27,17 +28,17 @@ Array.prototype.forAdjacentPairs = function(callback, thisPtr) {
 	}
 };
 
-var alertFallback = true; 
-if (typeof console === "undefined" || typeof console.log === "undefined") { 
-	console = {}; 
-	if (alertFallback) { 
-		console.log = function(msg) { 
-			alert(msg); 
-		}; 
+var alertFallback = true;
+if (typeof console === "undefined" || typeof console.log === "undefined") {
+	console = {};
+	if (alertFallback) {
+		console.log = function(msg) {
+			alert(msg);
+		};
 	} else {
-		console.log = function() {}; 
-	} 
-} 
+		console.log = function() {};
+	}
+}
 
 var randomInt = function(min, max) {
 	if(max === undefined) {

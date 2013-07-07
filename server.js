@@ -64,6 +64,13 @@ app.get('/script.js', function(req, res) {
 		res.end(src);
 	})
 });
+app.get('/client-only.js', function(req, res) {
+	browserify(['./client-only']).bundle(function(err, src) {
+		console.log(err);
+		res.contentType('js');
+		res.end(src);
+	})
+});
 app.get('/games/:id/log', function (req, res) {
 	fs.readFile('logs/'+ req.params.id, 'utf8', function (err, data) {
 		if(!err)
@@ -176,7 +183,7 @@ setInterval(function() {
 
 	//Add commands
 	cli.on('line', function(line) {
-		var success = commands.tryRun(line, gameManager.defaultGame);
+		var success = commands.tryRun(line, gameManager.defaultGame, cli);
 		if(!success) {
 			util.log('sending "'.grey+line+'"'.grey);
 			io.sockets.emit('servermessage', ""+line);
