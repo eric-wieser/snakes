@@ -104,13 +104,15 @@ Snake.prototype.addBall = function(ball) {
 	ball.velocity.set(0, 0);
 	ball.ownerSnake = this;
 
-	var pos = this.tail.position
-	var dist = ball.radius + this.tail.radius;
+	var tail = this.tail
+
+	var pos = tail.position
+	var dist = ball.radius + tail.radius;
 	for(var j = 0; j < 100; j++) {
 		var p = Vector.fromPolarCoords(dist, Math.random() * Math.PI * 2)
 		ball.position = p.plusEquals(pos);
-		var collides = this.balls.some(function(b) {b.touches(ball)});
-		if(collides) break;
+		var collides = this.balls.some(function(b) { return b != tail && b.touches(ball) });
+		if(!collides) break;
 	}
 	this.balls.push(ball);
 }
