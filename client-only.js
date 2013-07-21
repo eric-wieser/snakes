@@ -182,13 +182,15 @@ if(location.search == '?4') {
 	snakes[3].controls = keycodes.hjkl
 }
 else if(location.search == '?3') {
+	snakes[0] = new Snake(10, new Color(255, 128, 0), new Vector(  universe.width/3,   universe.height / 3), universe);
+	snakes[0].controls = keycodes.wasd
 	snakes[1] = new Snake(10, new Color(0, 255, 128), new Vector(2*universe.width/3,   universe.height / 3), universe);
 	snakes[1].controls = keycodes.arrows
 	snakes[2] = new Snake(10, new Color(128, 0, 255), new Vector(  universe.width/2, 2*universe.height / 3), universe);
 	snakes[2].controls = keycodes.numpad
 }
 else if(location.search == '?1') {
-	snakes[0] = new Snake(10, new Color(255, 128, 0), new Vector(  universe.width/3,   universe.height / 3), universe);
+	snakes[0] = new Snake(10, new Color(255, 128, 0), new Vector(  universe.width/2,   universe.height / 2), universe);
 	snakes[0].controls = keycodes.wasd
 }
 else {
