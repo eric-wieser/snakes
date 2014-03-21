@@ -15,7 +15,7 @@ function Game(name) {
 	this.livingPlayers = {};
 	this.running = false;
 	this.name = name;
-	this.logfile = fs.createWriteStream('logs/'+name, {flags: 'a+'});
+	this.logfile = fs.createWriteStream('logs/'+name+'.log', {flags: 'a+'});
 
 	var lastt = +Date.now();
 	setInterval((function() {
