@@ -72,7 +72,7 @@ app.get('/client-only.js', function(req, res) {
 	})
 });
 app.get('/games/:id/log', function (req, res) {
-	fs.readFile('logs/'+ req.params.id, 'utf8', function (err, data) {
+	fs.readFile('logs/'+ req.params.id+'.log', 'utf8', function (err, data) {
 		if(!err)
 			res.send(data.replace(/\u001B\[[^m]+m/g, '').split('\n').join('\<br />'));
 		else {
